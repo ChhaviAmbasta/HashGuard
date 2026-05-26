@@ -4,6 +4,8 @@ import sqlite3
 import hashlib
 import sys
 import os
+from PIL import Image, ImageTk
+import random
 
 # Allow dashboard import
 sys.path.append(os.path.dirname(__file__))
@@ -21,12 +23,91 @@ CREATE TABLE IF NOT EXISTS users (
 """)
 
 conn.commit()
-
 # ================= MAIN WINDOW =================
 root = tk.Tk()
+
 root.title("HashGuard Login")
-root.geometry("500x650")
+
+root.geometry("900x700")
+
+root.minsize(700, 650)
+
 root.configure(bg="#0b1437")
+
+# ================= ANIMATED BACKGROUND =================
+
+canvas = tk.Canvas(
+    root,
+    bg="#0b1437",
+    highlightthickness=0
+)
+
+canvas.place(
+    relwidth=1,
+    relheight=1
+)
+
+particles = []
+
+for i in range(120):
+
+    x = random.randint(0, root.winfo_screenwidth())
+    y = random.randint(0, root.winfo_screenheight())
+
+    size = random.randint(1, 3)
+
+    particle = canvas.create_oval(
+        x,
+        y,
+        x + size,
+        y + size,
+        fill="#00ffff",
+        outline=""
+    )
+
+    dx = random.choice([-1, 1]) * random.uniform(0.3, 1)
+    dy = random.choice([-1, 1]) * random.uniform(0.3, 1)
+
+    particles.append([particle, dx, dy])
+
+def animate_particles():
+
+    for p in particles:
+
+        particle = p[0]
+        dx = p[1]
+        dy = p[2]
+
+        canvas.move(particle, dx, dy)
+
+        coords = canvas.coords(particle)
+
+        if coords[0] <= 0 or coords[2] >= root.winfo_width():
+            p[1] = -dx
+
+        if coords[1] <= 0 or coords[3] >= root.winfo_height():
+            p[2] = -dy
+
+    root.after(30, animate_particles)
+
+animate_particles()
+
+# ================= LOGO =================
+
+logo_img = Image.open("assets/HashGuard_logo.png")
+
+logo_img = logo_img.resize((85, 95))
+
+logo_photo = ImageTk.PhotoImage(logo_img)
+
+logo_label = tk.Label(
+    root,
+    image=logo_photo,
+    bg="#0b1437"
+)
+
+logo_label.pack(pady=(20, 5))
+logo_label.lift()
 
 # ================= TITLE =================
 title = tk.Label(
@@ -36,7 +117,8 @@ title = tk.Label(
     fg="white",
     bg="#0b1437"
 )
-title.pack(pady=(50, 10))
+title.pack(pady=(5, 5))
+title.lift()
 
 subtitle = tk.Label(
     root,
@@ -45,7 +127,8 @@ subtitle = tk.Label(
     fg="#cbd5e1",
     bg="#0b1437"
 )
-subtitle.pack(pady=(0, 40))
+subtitle.pack(pady=(0, 25))
+subtitle.lift()
 
 # ================= LOGIN FRAME =================
 frame = tk.Frame(
@@ -54,7 +137,12 @@ frame = tk.Frame(
     padx=40,
     pady=40
 )
-frame.pack(pady=20)
+frame.place(
+    relx=0.5,
+    rely=0.63,
+    anchor="center"
+)
+frame.lift()
 
 login_label = tk.Label(
     frame,
@@ -281,25 +369,30 @@ login_btn = tk.Button(
     font=("Segoe UI", 12, "bold"),
     bg="#4f46e5",
     fg="white",
-    width=25,
-    pady=10,
+    width=28,
+    height=2,
     borderwidth=0,
+    cursor="hand2",
     command=login
 )
-login_btn.pack(pady=(0, 15))
+
+login_btn.pack(pady=(15, 15))
+
 
 create_btn = tk.Button(
     frame,
     text="Create Account",
-    font=("Segoe UI", 11, "bold"),
+    font=("Segoe UI", 12, "bold"),
     bg="#16a34a",
     fg="white",
-    width=25,
-    pady=10,
+    width=28,
+    height=2,
     borderwidth=0,
+    cursor="hand2",
     command=create_account
 )
-create_btn.pack()
+
+create_btn.pack(pady=(0, 10))
 
 # ================= FOOTER =================
 footer = tk.Label(
@@ -309,7 +402,12 @@ footer = tk.Label(
     fg="#94a3b8",
     bg="#0b1437"
 )
-footer.pack(side="bottom", pady=20)
+footer.place(
+    relx=0.5,
+    rely=0.97,
+    anchor="center"
+)
+footer.lift()
 
 # ================= RUN =================
 root.mainloop()

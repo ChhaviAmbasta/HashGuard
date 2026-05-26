@@ -9,6 +9,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 import shutil
 from PIL import Image, ImageTk
+import random
 
 current_user = ""
 
@@ -26,6 +27,74 @@ root.title("HashGuard Dashboard")
 root.geometry("1250x720")
 root.minsize(1200, 700)
 root.configure(bg="#0b1437")
+
+# ================= PARTICLE BACKGROUND =================
+
+canvas = tk.Canvas(
+    root,
+    bg="#0b1437",
+    highlightthickness=0
+)
+
+canvas.place(
+    relwidth=1,
+    relheight=1
+)
+
+particles = []
+
+for i in range(220):
+
+    x = random.randint(0, 2000)
+    y = random.randint(0, 1200)
+
+    size = random.randint(2, 5)
+
+    colors = [
+        "#22d3ee",
+        "#38bdf8",
+        "#67e8f9",
+        "#0ea5e9"
+    ]
+
+    particle = canvas.create_oval(
+        x,
+        y,
+        x + size,
+        y + size,
+        fill=random.choice(colors),
+        outline=""
+    )
+
+    dx = random.choice([-1, 1]) * random.uniform(0.3, 0.8)
+    dy = random.choice([-1, 1]) * random.uniform(0.3, 0.8)
+
+    particles.append([particle, dx, dy])
+
+# ================= PARTICLE ANIMATION =================
+
+def animate_particles():
+
+    width = root.winfo_width()
+    height = root.winfo_height()
+
+    for particle_data in particles:
+
+        particle = particle_data[0]
+        dx = particle_data[1]
+        dy = particle_data[2]
+
+        canvas.move(particle, dx, dy)
+
+        x1, y1, x2, y2 = canvas.coords(particle)
+
+        if x1 <= 0 or x2 >= width:
+            particle_data[1] *= -1
+
+        if y1 <= 0 or y2 >= height:
+            particle_data[2] *= -1
+
+    root.after(35, animate_particles)
 
 # ================= DATABASE =================
 conn = sqlite3.connect("database/files.db")
@@ -752,3 +821,21 @@ footer = tk.Label(
 )
 
 footer.pack(pady=10)
+
+# ================= LIFT WIDGETS =================
+
+header.lift()
+
+button_frame.lift()
+
+search_frame.lift()
+
+status_label.lift()
+
+count_label.lift()
+
+table_container.lift()
+
+footer.lift()
+
+animate_particles()
