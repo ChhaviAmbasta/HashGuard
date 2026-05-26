@@ -7,8 +7,8 @@ import sqlite3
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
-import os
 import shutil
+from PIL import Image, ImageTk
 
 current_user = ""
 
@@ -24,8 +24,8 @@ def open_dashboard(username):
 root = tk.Tk()
 root.title("HashGuard Dashboard")
 root.geometry("1250x720")
+root.minsize(1200, 700)
 root.configure(bg="#0b1437")
-
 
 # ================= DATABASE =================
 conn = sqlite3.connect("database/files.db")
@@ -38,20 +38,39 @@ CREATE TABLE IF NOT EXISTS files (
     file_size TEXT,
     file_hash TEXT UNIQUE,
     uploaded_by TEXT,
-    upload_time TEXT
+    upload_time TEXT,
+    status TEXT
 )
 """)
 
 conn.commit()
 
 # ================= HEADER =================
-header = tk.Frame(root, bg="#111c44", height=90)
+header = tk.Frame(root, bg="#111c44", height=110)
 header.pack(fill="x")
+
+logo_img = Image.open("assets/HashGuard_logo.png")
+
+logo_img = logo_img.resize((60, 70))
+
+logo = ImageTk.PhotoImage(logo_img)
+
+logo_label = tk.Label(
+    header,
+    image=logo,
+    bg="#111c44",
+    bd=0,
+    highlightthickness=0
+)
+
+logo_label.image = logo
+
+logo_label.place(x=25, y=10)
 
 title = tk.Label(
     header,
     text="HashGuard Dashboard",
-    font=("Segoe UI", 30, "bold"),
+    font=("Segoe UI", 26, "bold"),
     fg="white",
     bg="#111c44"
 )
@@ -129,7 +148,11 @@ logout_btn = tk.Button(
     cursor="hand2"
 )
 
-logout_btn.place(x=1120, y=25)
+logout_btn.place(
+    relx=0.98,
+    y=25,
+    anchor="ne"
+)
 
 # ================= HASH FUNCTION =================
 def generate_hash(file_path):
@@ -181,7 +204,8 @@ columns = (
     "Size",
     "SHA-256 Hash",
     "Uploaded By",
-    "Date & Time"
+    "Date & Time",
+    "Status"
 )
 
 style = ttk.Style()
@@ -214,9 +238,46 @@ tree = ttk.Treeview(
 
 for col in columns:
     tree.heading(col, text=col)
-    tree.column(col, width=240)
 
-tree.pack(fill="both", expand=True, padx=20, pady=10)
+tree.column("File Name", width=220)
+tree.column("Size", width=100)
+tree.column("SHA-256 Hash", width=280)
+tree.column("Uploaded By", width=120)
+tree.column("Date & Time", width=170)
+tree.column("Status", width=120)
+
+tree.tag_configure(
+    "verified",
+    background="#dcfce7"
+)
+
+tree.tag_configure(
+    "tampered",
+    background="#fee2e2"
+)
+
+scrollbar = ttk.Scrollbar(
+    table_container,
+    orient="vertical",
+    command=tree.yview
+)
+
+tree.configure(
+    yscrollcommand=scrollbar.set
+)
+
+scrollbar.pack(
+    side="right",
+    fill="y"
+)
+
+tree.pack(
+    fill="both",
+    expand=True,
+    padx=20,
+    pady=10,
+    side="left"
+)
 
 # ================= FILE COUNT =================
 
@@ -242,6 +303,16 @@ def load_files():
 
     for row in rows:
 
+        status = row[6]
+
+        tag = ""
+
+        if status == "Verified":
+            tag = "verified"
+
+        elif status == "Tampered":
+            tag = "tampered"
+
         tree.insert(
             "",
             "end",
@@ -250,8 +321,10 @@ def load_files():
                 row[2],
                 row[3][:30] + "...",
                 row[4],
-                row[5]
-            )
+                row[5],
+                row[6]
+            ),
+            tags=(tag,)
         )
 
     count_label.config(
@@ -315,21 +388,23 @@ def upload_file():
         cursor.execute(
             """
             INSERT INTO files (
-                file_name,
-                file_size,
-                file_hash,
-                uploaded_by,
-                upload_time
+            file_name,
+            file_size,
+            file_hash,
+            uploaded_by,
+            upload_time,
+            status
             )
-            VALUES (?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
             (
                 file_name,
                 f"{file_size} KB",
                 file_hash,
                 current_user,
-                upload_time
-            )
+                upload_time,
+                "Pending"
+)
         )
 
         conn.commit()
@@ -371,66 +446,88 @@ def open_file():
 # ================= VERIFY FILE =================
 def verify_file():
 
-    file_path = filedialog.askopenfilename()
+    selected = tree.selection()
 
-    if not file_path:
-        return
+    if not selected:
 
-    try:
-
-        file_name = os.path.basename(file_path)
-
-        current_hash = generate_hash(file_path)
-
-        cursor.execute(
-            "SELECT file_hash FROM files WHERE file_name=?",
-            (file_name,)
+        messagebox.showwarning(
+            "No Selection",
+            "Please select a file"
         )
 
-        result = cursor.fetchone()
+        return
 
-        if result is None:
+    values = tree.item(selected)["values"]
 
-            status_label.config(
-                text="File Not Found In Database",
-                fg="red"
-            )
+    filename = values[0]
 
-            return
+    filepath = os.path.join("uploads", filename)
 
-        stored_hash = result[0]
-
-        # Compare Hash
-        if current_hash == stored_hash:
-
-            status_label.config(
-                text="File Integrity Verified",
-                fg="#22c55e"
-            )
-
-            messagebox.showinfo(
-                "Verified",
-                "File Integrity Verified"
-            )
-
-        else:
-
-            status_label.config(
-                text="File Tampered",
-                fg="red"
-            )
-
-            messagebox.showerror(
-                "Tampered",
-                "File Has Been Modified"
-            )
-
-    except Exception as e:
+    if not os.path.exists(filepath):
 
         messagebox.showerror(
             "Error",
-            str(e)
+            "File not found"
         )
+
+        return
+
+    current_hash = generate_hash(filepath)
+
+    cursor.execute(
+        "SELECT file_hash FROM files WHERE file_name=?",
+        (filename,)
+    )
+
+    result = cursor.fetchone()
+
+    if not result:
+
+        messagebox.showerror(
+            "Error",
+            "File not found in database"
+        )
+
+        return
+
+    stored_hash = result[0]
+
+    if current_hash == stored_hash:
+
+        status = "Verified"
+
+        status_label.config(
+            text="File Integrity Verified",
+            fg="#22c55e"
+        )
+
+        messagebox.showinfo(
+            "Verified",
+            "File Integrity Verified"
+        )
+
+    else:
+
+        status = "Tampered"
+
+        status_label.config(
+            text="File Tampered",
+            fg="red"
+        )
+
+        messagebox.showerror(
+            "Tampered",
+            "File Has Been Modified"
+        )
+
+    cursor.execute(
+        "UPDATE files SET status=? WHERE file_name=?",
+        (status, filename)
+    )
+
+    conn.commit()
+
+    load_files()
 
 open_btn = tk.Button(
     button_frame,
