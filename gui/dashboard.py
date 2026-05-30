@@ -46,6 +46,7 @@ particles = []
 for i in range(220):
 
     x = random.randint(0, 2000)
+
     y = random.randint(0, 1200)
 
     size = random.randint(2, 5)
@@ -108,7 +109,9 @@ CREATE TABLE IF NOT EXISTS files (
     file_hash TEXT UNIQUE,
     uploaded_by TEXT,
     upload_time TEXT,
-    status TEXT
+    status TEXT,
+    file_path TEXT,
+    permission TEXT
 )
 """)
 
@@ -418,6 +421,7 @@ def upload_file():
         )
 
         file_hash = generate_hash(file_path)
+        print("HASH:", file_hash)
 
         upload_time = datetime.now().strftime(
             "%d-%m-%Y %H:%M:%S"
@@ -462,17 +466,22 @@ def upload_file():
             file_hash,
             uploaded_by,
             upload_time,
-            status
+            status,
+            file_path,
+            permission
             )
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
-                file_name,
-                f"{file_size} KB",
-                file_hash,
-                current_user,
-                upload_time,
-                "Pending"
+                
+                    file_name,
+                    f"{file_size} KB",
+                    file_hash,
+                    current_user,
+                    upload_time,
+                    "Pending",
+                    destination,
+                    "Owner"
 )
         )
 
@@ -504,6 +513,20 @@ def open_file():
     values = tree.item(selected, "values")
 
     filename = values[0]
+
+    cursor.execute(
+        "SELECT uploaded_by FROM files WHERE file_name=?",
+        (filename,)
+        )
+    
+    owner = cursor.fetchone()[0]
+    
+    if owner != current_user:
+        messagebox.showerror(
+            "Access Denied",
+            "You can only open your own files"
+            )
+        return
 
     filepath = os.path.join("uploads", filename)
 
@@ -544,7 +567,7 @@ def verify_file():
     current_hash = generate_hash(filepath)
 
     cursor.execute(
-        "SELECT file_hash FROM files WHERE file_name=?",
+        "SELECT id, file_hash, uploaded_by FROM files WHERE file_name=?",
         (filename,)
     )
 
@@ -559,7 +582,21 @@ def verify_file():
 
         return
 
-    stored_hash = result[0]
+    file_id = result[0]
+    
+    stored_hash = result[1]
+    
+    owner = result[2]
+
+    if owner != current_user:
+        
+        messagebox.showerror(
+            "Access Denied",
+            "You can only verify your own files"
+            
+            )
+        return
+
 
     if current_hash == stored_hash:
 
@@ -590,8 +627,8 @@ def verify_file():
         )
 
     cursor.execute(
-        "UPDATE files SET status=? WHERE file_name=?",
-        (status, filename)
+        "UPDATE files SET status=? WHERE id=?",
+        (status, file_id)
     )
 
     conn.commit()
@@ -631,6 +668,18 @@ def delete_file():
     values = tree.item(selected_item)["values"]
 
     file_name = values[0]
+
+    cursor.execute(
+    "SELECT uploaded_by FROM files WHERE file_name=?",
+    (file_name,)
+)
+    owner = cursor.fetchone()[0]
+    if owner != current_user:
+        messagebox.showerror(
+            "Access Denied",
+            "You can only delete your own files"
+            )
+        return
 
     confirm = messagebox.askyesno(
         "Delete File",

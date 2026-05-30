@@ -16,8 +16,13 @@ cursor = conn.cursor()
 
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS users (
+
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+
     username TEXT UNIQUE,
+
+    email TEXT UNIQUE,
+
     password TEXT
 )
 """)
@@ -208,9 +213,9 @@ def login():
     hashed_password = hash_password(password)
 
     cursor.execute(
-        "SELECT * FROM users WHERE username=? AND password=?",
+        "SELECT email FROM users WHERE username=? AND password=?",
         (username, hashed_password)
-    )
+        )
 
     user = cursor.fetchone()
 
@@ -225,7 +230,7 @@ def login():
 
         import dashboard
 
-        dashboard.open_dashboard(username)
+        dashboard.open_dashboard(user[0])
 
     else:
         messagebox.showerror(
@@ -238,7 +243,7 @@ def create_account():
 
     register_window = tk.Toplevel(root)
     register_window.title("Create Account")
-    register_window.geometry("420x500")
+    register_window.geometry("420x600")
     register_window.configure(bg="#111c44")
 
     # ===== TITLE =====
@@ -267,6 +272,26 @@ def create_account():
         width=28
     )
     user_entry.pack(pady=(5, 20), ipady=7)
+
+    # ===== EMAIL =====
+    email_label = tk.Label(
+        register_window,
+        text="Email",
+        font=("Segoe UI", 11),
+        fg="white",
+        bg="#111c44"
+        
+        )
+    email_label.pack(anchor="w", padx=40)
+    
+    email_entry = tk.Entry(
+        register_window,
+        font=("Segoe UI", 12),
+        width=28
+        )
+    
+    email_entry.pack(pady=(5, 20), ipady=7)
+
 
     # ===== PASSWORD =====
     pass_label = tk.Label(
@@ -308,10 +333,11 @@ def create_account():
     def register():
 
         username = user_entry.get()
+        email = email_entry.get()
         password = pass_entry.get()
         confirm = confirm_entry.get()
 
-        if username == "" or password == "" or confirm == "":
+        if username == "" or email == "" or password == "" or confirm == "":
             messagebox.showerror(
                 "Error",
                 "Please fill all fields"
@@ -329,10 +355,9 @@ def create_account():
 
         try:
             cursor.execute(
-                "INSERT INTO users (username, password) VALUES (?, ?)",
-                (username, hashed_password)
-            )
-
+                "INSERT INTO users (username, email, password) VALUES (?, ?, ?)",
+                (username, email, hashed_password)
+                )
             conn.commit()
 
             messagebox.showinfo(
@@ -360,7 +385,7 @@ def create_account():
         borderwidth=0,
         command=register
     )
-    register_btn.pack()
+    register_btn.pack(pady=20)
 
 # ================= BUTTONS =================
 login_btn = tk.Button(
