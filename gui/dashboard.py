@@ -117,6 +117,22 @@ CREATE TABLE IF NOT EXISTS files (
 
 conn.commit()
 
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS access_requests (
+
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    file_name TEXT,
+
+    owner_email TEXT,
+
+    requester_email TEXT,
+
+    status TEXT
+)
+""")
+
+conn.commit()
 # ================= HEADER =================
 header = tk.Frame(root, bg="#111c44", height=110)
 header.pack(fill="x")
@@ -403,7 +419,6 @@ def load_files():
         text=f"Total Files: {len(tree.get_children())}"
     )
 
-# ================= UPLOAD FILE =================
 def upload_file():
 
     file_path = filedialog.askopenfilename()
@@ -421,21 +436,13 @@ def upload_file():
         )
 
         file_hash = generate_hash(file_path)
-        print("HASH:", file_hash)
 
         upload_time = datetime.now().strftime(
             "%d-%m-%Y %H:%M:%S"
         )
 
-        # Create uploads folder if not exists
-        if not os.path.exists("uploads"):
-            os.makedirs("uploads")
-            
-        # Copy file to uploads folder
-        destination = os.path.join("uploads", file_name)
-        shutil.copy(file_path, destination)
+        # ================= DUPLICATE CHECK =================
 
-        # Duplicate Check
         cursor.execute(
             "SELECT * FROM files WHERE file_hash=?",
             (file_hash,)
@@ -452,47 +459,68 @@ def upload_file():
 
             messagebox.showwarning(
                 "Duplicate File",
-                "This file already exists"
+                "A file with the same content already exists."
             )
 
             return
 
-        # Save to Database
+        # ================= CREATE UPLOADS FOLDER =================
+
+        if not os.path.exists("uploads"):
+            os.makedirs("uploads")
+
+        # ================= COPY FILE =================
+
+        destination = os.path.join(
+            "uploads",
+            file_name
+        )
+
+        shutil.copy(
+            file_path,
+            destination
+        )
+
+        # ================= SAVE TO DATABASE =================
+
         cursor.execute(
             """
             INSERT INTO files (
-            file_name,
-            file_size,
-            file_hash,
-            uploaded_by,
-            upload_time,
-            status,
-            file_path,
-            permission
+                file_name,
+                file_size,
+                file_hash,
+                uploaded_by,
+                upload_time,
+                status,
+                file_path,
+                permission
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
-                
-                    file_name,
-                    f"{file_size} KB",
-                    file_hash,
-                    current_user,
-                    upload_time,
-                    "Pending",
-                    destination,
-                    "Owner"
-)
+                file_name,
+                f"{file_size} KB",
+                file_hash,
+                current_user,
+                upload_time,
+                "Pending",
+                destination,
+                "Owner"
+            )
         )
 
         conn.commit()
 
-        # Reload Table
         load_files()
 
         status_label.config(
             text="File Uploaded Successfully",
             fg="#22c55e"
+        )
+
+        messagebox.showinfo(
+            "Success",
+            "File Uploaded Successfully"
         )
 
     except Exception as e:
@@ -507,7 +535,12 @@ def open_file():
     selected = tree.focus()
 
     if not selected:
-        messagebox.showwarning("Warning", "Please select a file")
+
+        messagebox.showwarning(
+            "Warning",
+            "Please select a file"
+        )
+
         return
 
     values = tree.item(selected, "values")
@@ -517,25 +550,130 @@ def open_file():
     cursor.execute(
         "SELECT uploaded_by FROM files WHERE file_name=?",
         (filename,)
-        )
-    
-    owner = cursor.fetchone()[0]
-    
-    if owner != current_user:
+    )
+
+    result = cursor.fetchone()
+
+    if not result:
+
         messagebox.showerror(
-            "Access Denied",
-            "You can only open your own files"
-            )
+            "Error",
+            "File not found in database"
+        )
+
         return
 
-    filepath = os.path.join("uploads", filename)
+    owner = result[0]
 
-    if os.path.exists(filepath):
-        os.startfile(filepath)
-    else:
-        messagebox.showerror("Error", "File not found")
+    # ================= OWNER CAN OPEN DIRECTLY =================
+
+    if owner == current_user:
+
+        filepath = os.path.join(
+            "uploads",
+            filename
+        )
+
+        if os.path.exists(filepath):
+
+            os.startfile(filepath)
+
+        else:
+
+            messagebox.showerror(
+                "Error",
+                "File not found"
+            )
+
+        return
+
+    # ================= CHECK APPROVED REQUEST =================
+
+    cursor.execute(
+        """
+        SELECT status
+        FROM access_requests
+        WHERE file_name=?
+        AND requester_email=?
+        """,
+        (
+            filename,
+            current_user
+        )
+    )
+
+    request = cursor.fetchone()
+
+    if request:
+
+        if request[0] == "Approved":
+
+            filepath = os.path.join(
+                "uploads",
+                filename
+            )
+
+            if os.path.exists(filepath):
+
+                os.startfile(filepath)
+
+            else:
+
+                messagebox.showerror(
+                    "Error",
+                    "File not found"
+                )
+
+            return
+
+        elif request[0] == "Rejected":
+
+            messagebox.showerror(
+                "Access Denied",
+                "Your request was rejected by the owner."
+            )
+
+            return
+
+        elif request[0] == "Pending":
+
+            messagebox.showinfo(
+                "Pending",
+                "Your request is still pending approval."
+            )
+
+            return
+
+    # ================= SEND NEW REQUEST =================
+
+    cursor.execute(
+        """
+        INSERT INTO access_requests
+        (
+            file_name,
+            owner_email,
+            requester_email,
+            status
+        )
+        VALUES (?, ?, ?, ?)
+        """,
+        (
+            filename,
+            owner,
+            current_user,
+            "Pending"
+        )
+    )
+
+    conn.commit()
+
+    messagebox.showinfo(
+        "Request Sent",
+        "Permission request sent to owner."
+    )
 
 # ================= VERIFY FILE =================
+
 def verify_file():
 
     selected = tree.selection()
@@ -583,20 +721,19 @@ def verify_file():
         return
 
     file_id = result[0]
-    
+
     stored_hash = result[1]
-    
+
     owner = result[2]
 
     if owner != current_user:
-        
+
         messagebox.showerror(
             "Access Denied",
             "You can only verify your own files"
-            
-            )
-        return
+        )
 
+        return
 
     if current_hash == stored_hash:
 
@@ -634,22 +771,6 @@ def verify_file():
     conn.commit()
 
     load_files()
-
-open_btn = tk.Button(
-    button_frame,
-    text="Open File",
-    command=open_file,
-    bg="#ebde25",
-    fg="white",
-    font=("Segoe UI", 12, "bold"),
-    width=15,
-    height=2,
-    relief="flat",
-    cursor="hand2"
-)
-
-open_btn.grid(row=0, column=4, padx=15)
-
 # ================= DELETE FILE =================
 
 def delete_file():
@@ -701,6 +822,171 @@ def delete_file():
             text="File Deleted Successfully",
             fg="red"
         )
+# ================= VIEW REQUEST =================
+def view_requests():
+
+    request_window = tk.Toplevel(root)
+
+    request_window.title("Access Requests")
+
+    request_window.geometry("700x400")
+
+    tree_req = ttk.Treeview(
+        request_window,
+        columns=("File", "Requester", "Status"),
+        show="headings"
+    )
+
+    tree_req.heading("File", text="File")
+    tree_req.heading("Requester", text="Requester")
+    tree_req.heading("Status", text="Status")
+
+    tree_req.pack(fill="both", expand=True)
+
+    cursor.execute(
+        """
+        SELECT file_name,
+               requester_email,
+               status
+        FROM access_requests
+        WHERE owner_email=?
+        """,
+        (current_user,)
+    )
+
+    rows = cursor.fetchall()
+
+    for row in rows:
+
+        tree_req.insert(
+            "",
+            "end",
+            values=row
+        )
+
+    # ================= APPROVE =================
+
+    def approve_request():
+
+        selected = tree_req.focus()
+
+        if not selected:
+
+            messagebox.showwarning(
+                "No Selection",
+                "Select a request"
+            )
+
+            return
+
+        values = tree_req.item(selected)["values"]
+
+        file_name = values[0]
+
+        requester = values[1]
+
+        cursor.execute(
+            """
+            UPDATE access_requests
+            SET status='Approved'
+            WHERE file_name=?
+            AND requester_email=?
+            """,
+            (
+                file_name,
+                requester
+            )
+        )
+
+        conn.commit()
+
+        messagebox.showinfo(
+            "Approved",
+            "Request Approved Successfully"
+        )
+
+        request_window.destroy()
+
+        view_requests()
+
+    # ================= REJECT =================
+
+    def reject_request():
+
+        selected = tree_req.focus()
+
+        if not selected:
+
+            messagebox.showwarning(
+                "No Selection",
+                "Select a request"
+            )
+
+            return
+
+        values = tree_req.item(selected)["values"]
+
+        file_name = values[0]
+
+        requester = values[1]
+
+        cursor.execute(
+            """
+            UPDATE access_requests
+            SET status='Rejected'
+            WHERE file_name=?
+            AND requester_email=?
+            """,
+            (
+                file_name,
+                requester
+            )
+        )
+
+        conn.commit()
+
+        messagebox.showinfo(
+            "Rejected",
+            "Request Rejected"
+        )
+
+        request_window.destroy()
+
+        view_requests()
+
+    # ================= BUTTON FRAME =================
+
+    button_frame_req = tk.Frame(request_window)
+
+    button_frame_req.pack(pady=10)
+
+    approve_btn = tk.Button(
+        button_frame_req,
+        text="Approve",
+        bg="#16a34a",
+        fg="white",
+        font=("Segoe UI", 10, "bold"),
+        command=approve_request
+    )
+
+    approve_btn.pack(
+        side="left",
+        padx=10
+    )
+
+    reject_btn = tk.Button(
+        button_frame_req,
+        text="Reject",
+        bg="#dc2626",
+        fg="white",
+        font=("Segoe UI", 10, "bold"),
+        command=reject_request
+    )
+
+    reject_btn.pack(
+        side="left",
+        padx=10
+    )
 
 # ================= EXPORT REPORT =================
 
@@ -815,8 +1101,6 @@ verify_btn.grid(
     padx=15
 )
 
-# ================= DELETE BUTTON =================
-
 delete_btn = tk.Button(
     button_frame,
     text="Delete File",
@@ -836,9 +1120,7 @@ delete_btn.grid(
     padx=15
 )
 
-# ================= EXPORT REPORT BUTTON =================
-
-pdf_btn = tk.Button(
+export_btn = tk.Button(
     button_frame,
     text="Export Report",
     font=("Segoe UI", 12, "bold"),
@@ -851,9 +1133,47 @@ pdf_btn = tk.Button(
     command=export_pdf
 )
 
-pdf_btn.grid(
+export_btn.grid(
     row=0,
     column=3,
+    padx=15
+)
+
+open_btn = tk.Button(
+    button_frame,
+    text="Open File",
+    font=("Segoe UI", 12, "bold"),
+    bg="#ebde25",
+    fg="white",
+    padx=35,
+    pady=12,
+    borderwidth=0,
+    cursor="hand2",
+    command=open_file
+)
+
+open_btn.grid(
+    row=0,
+    column=4,
+    padx=15
+)
+
+request_btn = tk.Button(
+    button_frame,
+    text="View Requests",
+    font=("Segoe UI", 12, "bold"),
+    bg="#ea33d2",
+    fg="white",
+    padx=35,
+    pady=12,
+    borderwidth=0,
+    cursor="hand2",
+    command=view_requests
+)
+
+request_btn.grid(
+    row=0,
+    column=5,
     padx=15
 )
 
