@@ -1,3 +1,4 @@
+
 import tkinter as tk
 from tkinter import messagebox
 import sqlite3
@@ -6,6 +7,10 @@ import sys
 import os
 from PIL import Image, ImageTk
 import random
+import smtplib
+import time
+
+from email.mime.text import MIMEText
 
 # Allow dashboard import
 sys.path.append(os.path.dirname(__file__))
@@ -196,6 +201,144 @@ password_entry.pack(pady=(5, 25), ipady=7)
 # ================= HASH FUNCTION =================
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
+# ================= OTP VARIABLES =================
+
+current_otp = None
+current_email = None
+otp_expiry = None
+
+# ================= OTP GENERATION =================
+
+def generate_otp():
+    return str(random.randint(100000, 999999))
+
+# ================= SEND OTP =================
+
+def send_otp(email):
+
+    global current_otp
+    global current_email
+    global otp_expiry
+
+    current_otp = generate_otp()
+    current_email = email
+
+    otp_expiry = time.time() + 300
+
+    sender_email = "Hashguard7@gmail.com"
+    sender_password = "vvtwgmhjgnbzfmlu"
+
+    message = MIMEText(
+        f"""
+HashGuard Security Verification
+
+Your OTP is:
+
+{current_otp}
+
+This OTP is valid for 5 minutes.
+"""
+    )
+
+    message["Subject"] = "HashGuard Login OTP"
+    message["From"] = sender_email
+    message["To"] = email
+
+    try:
+
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.starttls()
+
+        server.login(
+            sender_email,
+            sender_password
+        )
+
+        server.sendmail(
+            sender_email,
+            email,
+            message.as_string()
+        )
+
+        server.quit()
+
+        return True
+
+    except Exception as e:
+
+        print("OTP Error:", e)
+
+        return False
+# ================= OTP WINDOW =================
+
+def verify_otp_window(email):
+
+    otp_window = tk.Toplevel(root)
+
+    otp_window.title("OTP Verification")
+
+    otp_window.geometry("350x250")
+
+    otp_window.configure(bg="#111c44")
+
+    tk.Label(
+        otp_window,
+        text="Enter OTP",
+        font=("Segoe UI", 18, "bold"),
+        bg="#111c44",
+        fg="white"
+    ).pack(pady=20)
+
+    otp_entry = tk.Entry(
+        otp_window,
+        font=("Segoe UI", 14),
+        justify="center"
+    )
+
+    otp_entry.pack(pady=10)
+
+    def verify():
+
+        otp = otp_entry.get()
+
+        if time.time() > otp_expiry:
+
+            messagebox.showerror(
+                "Expired",
+                "OTP expired"
+            )
+
+            return
+
+        if otp == current_otp:
+
+            messagebox.showinfo(
+                "Success",
+                "Login Successful"
+            )
+
+            otp_window.destroy()
+            root.destroy()
+
+            import dashboard
+
+            dashboard.open_dashboard(email)
+
+        else:
+
+            messagebox.showerror(
+                "Error",
+                "Invalid OTP"
+            )
+
+    tk.Button(
+        otp_window,
+        text="Verify",
+        command=verify,
+        bg="#4f46e5",
+        fg="white",
+        width=15
+    ).pack(pady=20)
 
 # ================= LOGIN FUNCTION =================
 def login():
@@ -220,23 +363,30 @@ def login():
     user = cursor.fetchone()
 
     if user:
+        email = user[0]
+        
+        if send_otp(email):
+            
+            messagebox.showinfo(
+                
+                "OTP Sent",
+                f"OTP sent to {email}"
+            )
 
-        messagebox.showinfo(
-            "Success",
-            f"Welcome {username}"
-        )
+            verify_otp_window(email)
 
-        root.destroy()
-
-        import dashboard
-
-        dashboard.open_dashboard(user[0])
+        else:
+            
+            messagebox.showerror(
+                "Error",
+                "Could not send OTP"
+           )
 
     else:
         messagebox.showerror(
             "Access Denied",
             "Invalid Username or Password"
-        )
+    )
 
 # ================= CREATE ACCOUNT FUNCTION =================
 def create_account():

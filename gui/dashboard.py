@@ -11,6 +11,7 @@ import shutil
 from PIL import Image, ImageTk
 import random
 
+
 current_user = ""
 
 def open_dashboard(username):
