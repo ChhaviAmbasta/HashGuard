@@ -154,13 +154,6 @@ python login.py
 
 ---
 
-# 👩‍💻 Developed By
-
-### Chhavi Ambasta  
-B.Tech CSE | Cybersecurity Enthusiast
-
----
-
 # 📜 License
 
 This project is developed for educational, research, and cybersecurity learning purposes.roject
