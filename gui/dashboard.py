@@ -460,7 +460,7 @@ def upload_file():
             messagebox.showerror(
                 "Permission Denied",
                 "Upload blocked. A file with exactly the same content already exists in HashGuard."
-            )
+                )
 
             return
 
