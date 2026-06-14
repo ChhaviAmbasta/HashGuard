@@ -1,10 +1,13 @@
 
-import tkinter as tk
-from tkinter import messagebox
 import sqlite3
+import tkinter as tk
+from tkinter import messagebox, simpledialog
 import hashlib
 import sys
 import os
+from dotenv import load_dotenv
+env_path = os.path.join(os.path.dirname(__file__), ".env")
+load_dotenv(env_path)
 from PIL import Image, ImageTk
 import random
 import smtplib
@@ -140,7 +143,7 @@ subtitle = tk.Label(
 subtitle.pack(pady=(0, 25))
 subtitle.lift()
 
-# ================= LOGIN FRAME =================
+
 frame = tk.Frame(
     root,
     bg="#111c44",
@@ -198,14 +201,39 @@ password_entry = tk.Entry(
 )
 password_entry.pack(pady=(5, 25), ipady=7)
 
+# ================= CAPTCHA =================
+captcha_value = str(random.randint(1000, 9999))
+
+# ================= CAPTCHA UI =================
+
+captcha_label = tk.Label(
+    frame,
+    text=f"CAPTCHA: {captcha_value}",
+    font=("Segoe UI", 11, "bold"),
+    fg="yellow",
+    bg="#111c44"
+)
+captcha_label.pack(anchor="w")
+
+captcha_entry = tk.Entry(
+    frame,
+    font=("Segoe UI", 12),
+    width=28
+)
+
+captcha_entry.pack(pady=(5, 20), ipady=7)
+
 # ================= HASH FUNCTION =================
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
+
 # ================= OTP VARIABLES =================
 
 current_otp = None
 current_email = None
 otp_expiry = None
+
+
 
 # ================= OTP GENERATION =================
 
@@ -225,8 +253,10 @@ def send_otp(email):
 
     otp_expiry = time.time() + 300
 
-    sender_email = "Hashguard7@gmail.com"
-    sender_password = "vvtwgmhjgnbzfmlu"
+    sender_email = os.getenv("HASHGUARD_EMAIL")
+    sender_password = os.getenv("HASHGUARD_APP_PASSWORD")
+    print("HASHGUARD_EMAIL =", sender_email)
+    print("HASHGUARD_APP_PASSWORD =", sender_password)
 
     message = MIMEText(
         f"""
@@ -340,11 +370,118 @@ def verify_otp_window(email):
         width=15
     ).pack(pady=20)
 
+# ================= RESET PASSWORD WINDOW =================
+
+def reset_password_window(email):
+
+    reset_window = tk.Toplevel(root)
+
+    reset_window.title("Reset Password")
+
+    reset_window.geometry("350x250")
+
+    reset_window.configure(bg="#111c44")
+
+    tk.Label(
+        reset_window,
+        text="New Password",
+        bg="#111c44",
+        fg="white"
+    ).pack(pady=10)
+
+    new_pass_entry = tk.Entry(
+        reset_window,
+        show="*"
+    )
+
+    new_pass_entry.pack(pady=5)
+
+    tk.Label(
+        reset_window,
+        text="Confirm Password",
+        bg="#111c44",
+        fg="white"
+    ).pack(pady=10)
+
+    confirm_pass_entry = tk.Entry(
+        reset_window,
+        show="*"
+    )
+
+    confirm_pass_entry.pack(pady=5)
+
+    def save_password():
+
+        new_password = new_pass_entry.get()
+
+        confirm_password = confirm_pass_entry.get()
+
+        if new_password == "" or confirm_password == "":
+
+            messagebox.showerror(
+                "Error",
+                "Please fill all fields"
+            )
+
+            return
+
+        if new_password != confirm_password:
+
+            messagebox.showerror(
+                "Error",
+                "Passwords do not match"
+            )
+
+            return
+
+        hashed_password = hash_password(new_password)
+
+        cursor.execute(
+            """
+            UPDATE users
+            SET password=?
+            WHERE email=?
+            """,
+            (
+                hashed_password,
+                email
+            )
+        )
+
+        conn.commit()
+
+        messagebox.showinfo(
+            "Success",
+            "Password Updated Successfully"
+        )
+
+        reset_window.destroy()
+
+    tk.Button(
+        reset_window,
+        text="Save Password",
+        command=save_password,
+        bg="#16a34a",
+        fg="white"
+    ).pack(pady=20)
+
 # ================= LOGIN FUNCTION =================
 def login():
 
     username = username_entry.get()
     password = password_entry.get()
+    captcha = captcha_entry.get()
+
+    if captcha != captcha_value:
+        
+        messagebox.showerror(
+            "Error",
+            "Invalid CAPTCHA"
+        )
+
+        return
+
+   
 
     if username == "" or password == "":
         messagebox.showerror(
@@ -356,9 +493,18 @@ def login():
     hashed_password = hash_password(password)
 
     cursor.execute(
-        "SELECT email FROM users WHERE username=? AND password=?",
-        (username, hashed_password)
+        """
+        SELECT email
+        FROM users
+        WHERE (username=? OR email=?)
+        AND password=?
+        """,
+        (
+            username,
+            username,
+            hashed_password
         )
+    )
 
     user = cursor.fetchone()
 
@@ -388,6 +534,103 @@ def login():
             "Invalid Username or Password"
     )
 
+def forgot_password():
+
+    email = simpledialog.askstring(
+        "Forgot Password",
+        "Enter your registered email:"
+    )
+
+    if not email:
+        return
+
+    cursor.execute(
+        "SELECT * FROM users WHERE email=?",
+        (email,)
+    )
+
+    user = cursor.fetchone()
+
+    if not user:
+
+        messagebox.showerror(
+            "Error",
+            "Email not found"
+        )
+
+        return
+
+    if send_otp(email):
+
+        messagebox.showinfo(
+            "OTP Sent",
+            "Password reset OTP sent to your email."
+        )
+
+        otp_window = tk.Toplevel(root)
+
+        otp_window.title("OTP Verification")
+
+        otp_window.geometry("350x250")
+
+        otp_window.configure(bg="#111c44")
+
+        tk.Label(
+            otp_window,
+            text="Enter OTP",
+            font=("Segoe UI", 16, "bold"),
+            bg="#111c44",
+            fg="white"
+        ).pack(pady=20)
+
+        otp_entry = tk.Entry(
+            otp_window,
+            font=("Segoe UI", 14)
+        )
+
+        otp_entry.pack(pady=10)
+
+        def verify_reset_otp():
+
+            entered_otp = otp_entry.get()
+
+            if time.time() > otp_expiry:
+
+                messagebox.showerror(
+                    "Expired",
+                    "OTP expired"
+                )
+
+                return
+
+            if entered_otp == current_otp:
+
+                otp_window.destroy()
+
+                reset_password_window(email)
+
+            else:
+
+                messagebox.showerror(
+                    "Error",
+                    "Invalid OTP"
+                )
+
+        tk.Button(
+            otp_window,
+            text="Verify OTP",
+            command=verify_reset_otp,
+            bg="#4f46e5",
+            fg="white"
+        ).pack(pady=20)
+
+    else:
+
+        messagebox.showerror(
+            "Error",
+            "Could not send OTP."
+        )
+        
 # ================= CREATE ACCOUNT FUNCTION =================
 def create_account():
 
@@ -494,6 +737,14 @@ def create_account():
             )
             return
 
+        if "@" not in email or "." not in email:
+            messagebox.showerror(
+                "Error",
+                "Please enter a valid email address"
+            )
+            return
+            
+
         if password != confirm:
             messagebox.showerror(
                 "Error",
@@ -502,6 +753,18 @@ def create_account():
             return
 
         hashed_password = hash_password(password)
+        if not send_otp(email):
+            messagebox.showerror(
+                "Error",
+                "Could not verify email."
+            )
+
+            return
+
+        messagebox.showinfo(
+            "Verification",
+            "OTP sent to your email. Verify before registration."
+        )
 
         try:
             cursor.execute(
@@ -568,6 +831,18 @@ create_btn = tk.Button(
 )
 
 create_btn.pack(pady=(0, 10))
+forgot_btn = tk.Button(
+    frame,
+    text="Forgot Password?",
+    font=("Segoe UI", 10),
+    bg="#111c44",
+    fg="#00ffff",
+    borderwidth=0,
+    cursor="hand2",
+    command=forgot_password
+)
+
+forgot_btn.pack()
 
 # ================= FOOTER =================
 footer = tk.Label(

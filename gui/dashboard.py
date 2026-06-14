@@ -447,20 +447,19 @@ def upload_file():
         cursor.execute(
             "SELECT * FROM files WHERE file_hash=?",
             (file_hash,)
-        )
-
+            )
         existing_file = cursor.fetchone()
 
         if existing_file:
-
+            
             status_label.config(
-                text="Duplicate File Detected",
-                fg="orange"
+                text="Permission Denied",
+                fg="red"
             )
 
-            messagebox.showwarning(
-                "Duplicate File",
-                "A file with the same content already exists."
+            messagebox.showerror(
+                "Permission Denied",
+                "Upload blocked. A file with exactly the same content already exists in HashGuard."
             )
 
             return
