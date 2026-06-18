@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request Center - HashGuard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="dashboard-wrapper">
+        <div class="container dashboard-container">
+            <div class="dashboard-card dashboard-card-wide mx-auto">
+                <div class="dashboard-header">
+                    <div>
+                        <div class="brand-logo mb-2">HG</div>
+                        <h1 class="welcome-text">Request & Permission Center</h1>
+                        <p class="welcome-subtext">Manage collaboration requests and active permissions</p>
+                    </div>
+                    <div class="dashboard-actions">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-light btn-sm">Dashboard</a>
+                        <a href="{{ url_for('logout') }}" class="btn btn-danger btn-sm">Logout</a>
+                    </div>
+                </div>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} mb-3" role="alert">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- Received Requests -->
+                <section class="dashboard-section mb-4">
+                    <h2 class="section-title text-info"><i class="fa-solid fa-inbox me-2"></i>Access Requests Received</h2>
+                    <p class="section-description">Other users requesting permission to view or edit files you own.</p>
+
+                    {% if requests_received %}
+                        <div class="table-responsive files-table-wrapper">
+                            <table class="table files-table align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Requester</th>
+                                        <th>File Name</th>
+                                        <th>Requested Permission</th>
+                                        <th>Request Date</th>
+                                        <th>Message</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for req in requests_received %}
+                                        <tr>
+                                            <td><span class="owner-badge">{{ req.requester_username }}</span></td>
+                                            <td>{{ req.original_filename }}</td>
+                                            <td>
+                                                <span class="badge {% if req.requested_permission == 'READ_WRITE' %}bg-warning text-dark{% else %}bg-info{% endif %}">
+                                                    {{ req.requested_permission }}
+                                                </span>
+                                            </td>
+                                            <td>{{ req.request_date }}</td>
+                                            <td><small class="text-muted">{{ req.request_message or 'No message provided' }}</small></td>
+                                            <td>
+                                                <span class="status-badge status-{{ req.status|lower }}">{{ req.status }}</span>
+                                            </td>
+                                            <td>
+                                                {% if req.status == 'PENDING' %}
+                                                    <div class="d-flex gap-2">
+                                                        <form action="{{ url_for('approve_request', request_id=req.id) }}" method="POST" class="d-inline">
+                                                            <input type="hidden" name="permission_type" value="READ_ONLY">
+                                                            <button type="submit" class="btn btn-success btn-sm">Approve Read-Only</button>
+                                                        </form>
+                                                        <form action="{{ url_for('approve_request', request_id=req.id) }}" method="POST" class="d-inline">
+                                                            <input type="hidden" name="permission_type" value="READ_WRITE">
+                                                            <button type="submit" class="btn btn-warning btn-sm text-dark">Approve Read-Write</button>
+                                                        </form>
+                                                        <form action="{{ url_for('reject_request', request_id=req.id) }}" method="POST" class="d-inline">
+                                                            <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                                                        </form>
+                                                    </div>
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <p class="mb-0">No access requests received yet.</p>
+                        </div>
+                    {% endif %}
+                </section>
+
+                <!-- Active Permissions Granted -->
+                <section class="dashboard-section mb-4">
+                    <h2 class="section-title text-success"><i class="fa-solid fa-key me-2"></i>Active Permissions Granted</h2>
+                    <p class="section-description">Permissions you have granted to other users on your files. You can revoke access at any time.</p>
+
+                    {% if permissions_granted %}
+                        <div class="table-responsive files-table-wrapper">
+                            <table class="table files-table align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>User</th>
+                                        <th>File Name</th>
+                                        <th>Permission Type</th>
+                                        <th>Granted At</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for perm in permissions_granted %}
+                                        <tr>
+                                            <td><span class="owner-badge">{{ perm.user_username }}</span></td>
+                                            <td>{{ perm.original_filename }}</td>
+                                            <td>
+                                                <span class="badge {% if perm.permission_type == 'READ_WRITE' %}bg-warning text-dark{% else %}bg-info{% endif %}">
+                                                    {{ perm.permission_type }}
+                                                </span>
+                                            </td>
+                                            <td>{{ perm.granted_at }}</td>
+                                            <td>
+                                                <form action="{{ url_for('revoke_permission', permission_id=perm.id) }}" method="POST" onsubmit="return confirm('Revoke access for this user?');" class="d-inline">
+                                                    <button type="submit" class="btn btn-danger btn-sm">Revoke Access</button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <p class="mb-0">No permissions granted yet.</p>
+                        </div>
+                    {% endif %}
+                </section>
+
+                <!-- Requests Sent -->
+                <section class="dashboard-section">
+                    <h2 class="section-title text-warning"><i class="fa-solid fa-paper-plane me-2"></i>Access Requests Sent</h2>
+                    <p class="section-description">Files owned by others that you have requested access to.</p>
+
+                    {% if requests_sent %}
+                        <div class="table-responsive files-table-wrapper">
+                            <table class="table files-table align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>File Name</th>
+                                        <th>Owner</th>
+                                        <th>Requested Permission</th>
+                                        <th>Request Date</th>
+                                        <th>Status</th>
+                                        <th>Decision Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for req in requests_sent %}
+                                        <tr>
+                                            <td>{{ req.original_filename }}</td>
+                                            <td><span class="owner-badge">{{ req.owner_username }}</span></td>
+                                            <td>
+                                                <span class="badge {% if req.requested_permission == 'READ_WRITE' %}bg-warning text-dark{% else %}bg-info{% endif %}">
+                                                    {{ req.requested_permission }}
+                                                </span>
+                                            </td>
+                                            <td>{{ req.request_date }}</td>
+                                            <td>
+                                                <span class="status-badge status-{{ req.status|lower }}">{{ req.status }}</span>
+                                            </td>
+                                            <td>{{ req.decision_date or '-' }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <p class="mb-0">You have not sent any access requests yet.</p>
+                        </div>
+                    {% endif %}
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

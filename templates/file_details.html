@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Details - HashGuard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="dashboard-wrapper">
+        <div class="container dashboard-container">
+            <div class="dashboard-card dashboard-card-wide mx-auto">
+                <div class="dashboard-header">
+                    <div>
+                        <div class="brand-logo mb-2">HG</div>
+                        <h1 class="welcome-text">File Details</h1>
+                        <p class="welcome-subtext">{{ file_record.original_filename }}</p>
+                    </div>
+                    <div class="dashboard-actions">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-light btn-sm">Back to Dashboard</a>
+                        <a href="{{ url_for('logout') }}" class="btn btn-danger btn-sm">Logout</a>
+                    </div>
+                </div>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} mb-3" role="alert">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <section class="dashboard-section">
+                    <div class="details-grid">
+                        <div class="detail-item">
+                            <span class="detail-label">Original Filename</span>
+                            <span class="detail-value">{{ file_record.original_filename }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Uploaded By</span>
+                            <span class="detail-value"><span class="owner-badge">{{ file_record.owner_username }}</span></span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Stored Filename</span>
+                            <span class="detail-value"><code>{{ file_record.stored_filename }}</code></span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Type</span>
+                            <span class="detail-value">.{{ file_record.file_extension }} ({{ file_record.mime_type }})</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Size</span>
+                            <span class="detail-value">{{ formatted_size }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Upload Time</span>
+                            <span class="detail-value">{{ file_record.upload_time }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Last Verified</span>
+                            <span class="detail-value">{{ file_record.last_verified or "Not verified yet" }}</span>
+                        </div>
+                        <div class="detail-item detail-item-full">
+                            <span class="detail-label">SHA-256 Hash</span>
+                            <span class="detail-value"><code class="hash-full">{{ file_record.sha256_hash }}</code></span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Status</span>
+                            <span class="detail-value">
+                                <span class="status-badge status-{{ file_record.status|lower }}">{{ file_record.status }}</span>
+                            </span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Deleted</span>
+                            <span class="detail-value">{{ "Yes" if file_record.is_deleted else "No" }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Your Active Permission</span>
+                            <span class="detail-value">
+                                <span class="badge {% if role == 'OWNER' %}bg-primary{% elif role == 'READ_WRITE' %}bg-warning text-dark{% else %}bg-info{% endif %} p-2">
+                                    {{ role }}
+                                </span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="file-actions mt-4">
+                        <a href="{{ url_for('files.download_file', file_id=file_record.id) }}" class="btn btn-outline-light btn-sm">Download</a>
+                        <form action="{{ url_for('files.verify_file', file_id=file_record.id) }}" method="POST" class="d-inline">
+                            <button type="submit" class="btn btn-primary btn-sm">Verify Integrity</button>
+                        </form>
+                        {% if is_owner and not file_record.is_deleted %}
+                            <form action="{{ url_for('files.delete_file', file_id=file_record.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Soft delete this file?');">
+                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </section>
+
+                {% if can_write and not file_record.is_deleted %}
+                <section class="dashboard-section mt-4">
+                    <h2 class="section-title text-warning"><i class="fa-solid fa-file-pen me-2"></i>Replace File Contents</h2>
+                    <p class="section-description">Upload a new file to replace the existing contents. This maintains the file metadata and ID but regenerates the SHA-256 integrity hash.</p>
+                    
+                    <form action="{{ url_for('files.replace_file', file_id=file_record.id) }}" method="POST" enctype="multipart/form-data" class="mt-3" data-upload-form>
+                        <div class="upload-dropzone mb-3" data-dropzone>
+                            <div class="upload-dropzone-icon">&#128194;</div>
+                            <div class="upload-dropzone-title">Drag & Drop replacement file here</div>
+                            <div class="upload-dropzone-subtitle">or click to browse</div>
+                            <input type="file" name="file" class="upload-file-input" data-file-input required id="replace-file-input">
+                            <label for="replace-file-input" class="btn btn-outline-light btn-sm mt-3">Browse Files</label>
+                            <div class="selected-file-name mt-2" data-selected-file>No file selected</div>
+                        </div>
+                        <button type="submit" class="btn btn-warning btn-sm text-dark fw-bold">
+                            <i class="fa-solid fa-arrow-up-from-bracket me-1"></i>Replace Content
+                        </button>
+                    </form>
+                </section>
+                {% endif %}
+
+                <section class="dashboard-section mt-4">
+                    <h2 class="section-title">Audit Log</h2>
+                    <p class="section-description">Immutable activity history for this file.</p>
+
+                    {% if audit_logs %}
+                        <div class="table-responsive files-table-wrapper mt-3">
+                            <table class="table files-table align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>Action</th>
+                                        <th>Details</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for log in audit_logs %}
+                                        <tr>
+                                            <td>{{ log.timestamp }}</td>
+                                            <td><span class="audit-action">{{ log.action }}</span></td>
+                                            <td>{{ log.details }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="empty-state mt-3">
+                            <p class="mb-0">No audit entries recorded for this file.</p>
+                        </div>
+                    {% endif %}
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

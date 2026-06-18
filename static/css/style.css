@@ -1,0 +1,554 @@
+/* HashGuard - Cybersecurity Theme Styles */
+
+:root {
+    --bg-primary: #0D1117;
+    --bg-card: #161B22;
+    --accent: #238636;
+    --accent-hover: #2ea043;
+    --text-primary: #FFFFFF;
+    --text-muted: #8B949E;
+    --border-color: #30363D;
+    --danger: #DA3633;
+    --warning: #D29922;
+    --info: #58A6FF;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+}
+
+.auth-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    background:
+        radial-gradient(circle at top right, rgba(35, 134, 54, 0.15), transparent 40%),
+        radial-gradient(circle at bottom left, rgba(88, 166, 255, 0.08), transparent 35%),
+        var(--bg-primary);
+}
+
+.auth-card,
+.dashboard-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    width: 100%;
+    max-width: 440px;
+    padding: 2rem;
+}
+
+.dashboard-card {
+    max-width: 720px;
+}
+
+.dashboard-card-wide {
+    max-width: 1100px;
+}
+
+.dashboard-container {
+    max-width: 1200px;
+}
+
+.auth-card-wide {
+    max-width: 520px;
+}
+
+.form-select {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    border-radius: 8px;
+    padding: 0.65rem 0.85rem;
+}
+
+.form-select:focus {
+    background-color: var(--bg-primary);
+    border-color: var(--accent);
+    color: var(--text-primary);
+    box-shadow: 0 0 0 3px rgba(35, 134, 54, 0.25);
+}
+
+.otp-input {
+    text-align: center;
+    font-size: 1.5rem;
+    letter-spacing: 0.5rem;
+    font-weight: 600;
+}
+
+.otp-timer-badge {
+    text-align: center;
+    margin-bottom: 1.25rem;
+}
+
+.security-question-box {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+}
+
+.question-email {
+    color: var(--info);
+    font-weight: 500;
+}
+
+.question-text {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.resend-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.brand-header {
+    text-align: center;
+    margin-bottom: 1.75rem;
+}
+
+.brand-logo {
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, var(--accent), #1f6feb);
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 4px 12px rgba(35, 134, 54, 0.3);
+}
+
+.brand-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    letter-spacing: 0.5px;
+}
+
+.brand-subtitle {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 0;
+}
+
+.form-label {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 0.35rem;
+}
+
+.form-control {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    border-radius: 8px;
+    padding: 0.65rem 0.85rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-control:focus {
+    background-color: var(--bg-primary);
+    border-color: var(--accent);
+    color: var(--text-primary);
+    box-shadow: 0 0 0 3px rgba(35, 134, 54, 0.25);
+}
+
+.form-control::placeholder {
+    color: #6E7681;
+}
+
+.btn-primary {
+    background-color: var(--accent);
+    border-color: var(--accent);
+    border-radius: 8px;
+    padding: 0.65rem 1rem;
+    font-weight: 600;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: var(--accent-hover);
+    border-color: var(--accent-hover);
+}
+
+.btn-outline-light {
+    border-radius: 8px;
+    border-color: var(--border-color);
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.btn-outline-light:hover {
+    background-color: var(--border-color);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+.btn-danger {
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+.auth-links {
+    text-align: center;
+    margin-top: 1.25rem;
+}
+
+.auth-links a {
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.2s ease;
+}
+
+.auth-links a:hover {
+    color: var(--accent-hover);
+    text-decoration: underline;
+}
+
+.alert {
+    border-radius: 8px;
+    border: 1px solid transparent;
+    font-size: 0.9rem;
+}
+
+.alert-success {
+    background-color: rgba(35, 134, 54, 0.15);
+    border-color: rgba(35, 134, 54, 0.4);
+    color: #3FB950;
+}
+
+.alert-danger {
+    background-color: rgba(218, 54, 51, 0.15);
+    border-color: rgba(218, 54, 51, 0.4);
+    color: #F85149;
+}
+
+.alert-warning {
+    background-color: rgba(210, 153, 34, 0.15);
+    border-color: rgba(210, 153, 34, 0.4);
+    color: #E3B341;
+}
+
+.alert-info {
+    background-color: rgba(88, 166, 255, 0.15);
+    border-color: rgba(88, 166, 255, 0.4);
+    color: #58A6FF;
+}
+
+.dashboard-wrapper {
+    min-height: 100vh;
+    padding: 2rem 1rem;
+    background:
+        radial-gradient(circle at top right, rgba(35, 134, 54, 0.12), transparent 45%),
+        var(--bg-primary);
+}
+
+.dashboard-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.welcome-text {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.welcome-subtext {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin-bottom: 0;
+}
+
+.dashboard-content {
+    border: 1px dashed var(--border-color);
+    border-radius: 10px;
+    padding: 2rem;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.dashboard-section {
+    background-color: rgba(13, 17, 23, 0.55);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 1.5rem;
+}
+
+.section-title {
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+}
+
+.section-description {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.section-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.dashboard-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.upload-dropzone {
+    border: 2px dashed var(--border-color);
+    border-radius: 10px;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.upload-dropzone.is-dragover {
+    border-color: var(--accent);
+    background-color: rgba(35, 134, 54, 0.08);
+}
+
+.upload-dropzone-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.upload-dropzone-title {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.upload-dropzone-subtitle,
+.upload-hint,
+.selected-file-name {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+.upload-file-input {
+    display: none;
+}
+
+.files-table-wrapper {
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.files-table {
+    margin-bottom: 0;
+    color: var(--text-primary);
+}
+
+.files-table thead th {
+    background-color: var(--bg-primary);
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.files-table tbody td {
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+}
+
+.files-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.filename-cell {
+    max-width: 220px;
+    word-break: break-word;
+}
+
+.type-badge,
+.hash-preview,
+.hash-full {
+    font-size: 0.85rem;
+}
+
+.hash-preview,
+.hash-full {
+    color: var(--info);
+    word-break: break-all;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0.2rem 0.65rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+}
+
+.status-active {
+    background-color: rgba(35, 134, 54, 0.15);
+    color: #3FB950;
+    border: 1px solid rgba(35, 134, 54, 0.35);
+}
+
+.status-modified {
+    background-color: rgba(210, 153, 34, 0.15);
+    color: #E3B341;
+    border: 1px solid rgba(210, 153, 34, 0.35);
+}
+
+.status-deleted {
+    background-color: rgba(218, 54, 51, 0.15);
+    color: #F85149;
+    border: 1px solid rgba(218, 54, 51, 0.35);
+}
+
+.status-quarantined {
+    background-color: rgba(88, 166, 255, 0.15);
+    color: #58A6FF;
+    border: 1px solid rgba(88, 166, 255, 0.35);
+}
+
+.file-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.empty-state {
+    border: 1px dashed var(--border-color);
+    border-radius: 10px;
+    padding: 1.25rem;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.detail-item {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.85rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.detail-item-full {
+    grid-column: 1 / -1;
+}
+
+.detail-label {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.detail-value {
+    font-size: 0.95rem;
+    word-break: break-word;
+}
+
+.audit-action {
+    color: var(--info);
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.owner-badge {
+    display: inline-flex;
+    align-items: center;
+    background-color: rgba(88, 166, 255, 0.12);
+    color: #58A6FF;
+    border: 1px solid rgba(88, 166, 255, 0.3);
+    border-radius: 999px;
+    padding: 0.15rem 0.6rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.security-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background-color: rgba(35, 134, 54, 0.15);
+    color: #3FB950;
+    border: 1px solid rgba(35, 134, 54, 0.3);
+    border-radius: 20px;
+    padding: 0.35rem 0.85rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+}
+
+@media (max-width: 576px) {
+    .auth-card,
+    .dashboard-card {
+        padding: 1.5rem;
+    }
+
+    .brand-title {
+        font-size: 1.5rem;
+    }
+
+    .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .details-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Custom Extensions for Notification Bell and Access Control */
+.hide-caret::after {
+    display: none !important;
+}
+
+.bg-dark-subtle {
+    background-color: rgba(35, 134, 54, 0.05) !important;
+    border-left: 3px solid var(--info);
+}
+
+.btn-xs {
+    padding: 0.15rem 0.3rem;
+    font-size: 0.75rem;
+    border-radius: 4px;
+}
+
+.dropdown-menu-dark .dropdown-item:hover {
+    background-color: var(--border-color);
+}
+

@@ -1,0 +1,15 @@
+<form action="{{ url_for('files.upload_file') }}" method="POST" enctype="multipart/form-data" class="upload-form" data-upload-form>
+    <input type="hidden" name="next" value="{{ next_url or url_for('dashboard') }}">
+    <div class="upload-dropzone" data-dropzone>
+        <div class="upload-dropzone-icon">&#128194;</div>
+        <p class="upload-dropzone-title">Drag &amp; drop your file here</p>
+        <p class="upload-dropzone-subtitle">or use the file picker below</p>
+        <input type="file" name="file" id="file-input" class="upload-file-input" required data-file-input>
+        <label for="file-input" class="btn btn-outline-light btn-sm mt-2">Choose File</label>
+        <p class="selected-file-name mt-2 mb-0" data-selected-file>No file selected</p>
+        <p class="upload-hint mt-3 mb-0">
+            Allowed: pdf, txt, docx, xlsx, pptx, png, jpg, jpeg
+        </p>
+    </div>
+    <button type="submit" class="btn btn-primary w-100 mt-3">Upload File</button>
+</form>

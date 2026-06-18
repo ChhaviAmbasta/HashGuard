@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - HashGuard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="auth-wrapper">
+        <div class="auth-card auth-card-wide">
+            <div class="brand-header">
+                <div class="brand-logo">HG</div>
+                <h1 class="brand-title">Create Account</h1>
+                <p class="brand-subtitle">Join HashGuard with enterprise-grade security</p>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} mb-3" role="alert">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form method="POST" action="{{ url_for('signup') }}" data-validate>
+                <div class="mb-3">
+                    <label for="username" class="form-label">Username</label>
+                    <input type="text" class="form-control" id="username" name="username"
+                           placeholder="Choose a username" required autocomplete="username">
+                </div>
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" class="form-control" id="email" name="email"
+                           placeholder="Enter your email" required autocomplete="email">
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="password" name="password"
+                           placeholder="Create a password" required autocomplete="new-password">
+                </div>
+                <div class="mb-3">
+                    <label for="security_question" class="form-label">Security Question</label>
+                    <select class="form-select" id="security_question" name="security_question" required>
+                        <option value="" disabled selected>Select a security question</option>
+                        {% for key, question in security_questions.items() %}
+                            <option value="{{ key }}">{{ question }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="security_answer" class="form-label">Security Answer</label>
+                    <input type="text" class="form-control" id="security_answer" name="security_answer"
+                           placeholder="Enter your security answer" required autocomplete="off">
+                </div>
+                <div class="mb-3">
+                    <label for="captcha" class="form-label d-block">Security CAPTCHA</label>
+                    <div class="d-flex align-items-center mb-2">
+                        <img id="captcha-img" src="{{ url_for('captcha_route') }}" alt="CAPTCHA" class="border border-secondary rounded" style="width: 150px; height: 50px;">
+                        <button type="button" class="btn btn-outline-light btn-sm ms-2" onclick="refreshCaptcha()">
+                            &#8635; Refresh
+                        </button>
+                    </div>
+                    <input type="text" class="form-control" id="captcha" name="captcha"
+                           placeholder="Enter CAPTCHA code" required autocomplete="off" style="text-transform: uppercase;">
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Continue to Email Verification</button>
+            </form>
+
+            <div class="auth-links">
+                <p class="mb-0">
+                    Already have an account? <a href="{{ url_for('login') }}">Sign in</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
