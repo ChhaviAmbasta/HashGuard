@@ -28,6 +28,8 @@ from file_service import (
     get_pending_request,
     process_file_replacement,
 )
+from io import BytesIO
+from utils.encryption import decrypt_bytes
 
 
 def create_files_blueprint(login_required, get_db_connection, utc_now_str, base_dir, log_audit, create_notification):
@@ -117,7 +119,6 @@ def create_files_blueprint(login_required, get_db_connection, utc_now_str, base_
                 flash("File not found.", "danger")
                 return redirect(url_for("dashboard"))
 
-            # Enforce read permission
             if not has_read_permission(conn, file_id, current_user_id()):
                 flash("You do not have permission to download this file.", "danger")
                 return redirect(url_for("dashboard"))
@@ -138,8 +139,11 @@ def create_files_blueprint(login_required, get_db_connection, utc_now_str, base_
         finally:
             conn.close()
 
+        with open(absolute_path, "rb") as f:
+            encrypted_data = f.read()
+        decrypted_data = decrypt_bytes(encrypted_data)
         return send_file(
-            absolute_path,
+            BytesIO(decrypted_data),
             as_attachment=True,
             download_name=file_record["original_filename"],
             mimetype=file_record["mime_type"],

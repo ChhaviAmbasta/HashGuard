@@ -9,7 +9,9 @@ import mimetypes
 import os
 import secrets
 from datetime import datetime
+from io import BytesIO
 
+from utils.encryption import decrypt_bytes, encrypt_bytes
 from utils.file_hash import compute_sha256_from_path, compute_sha256_from_stream
 from utils.file_validator import validate_upload
 
@@ -187,14 +189,14 @@ def get_file_absolute_path(upload_root, stored_filename, owner_id=None):
 
 
 def store_uploaded_file(upload_root, uploaded_file, extension):
-    """
-    Persist an uploaded file to the centralized repository.
-    Returns (stored_filename, absolute_path).
-    """
     upload_dir = ensure_upload_dir(upload_root)
     stored_filename = generate_stored_filename(extension)
     absolute_path = os.path.join(upload_dir, stored_filename)
-    uploaded_file.save(absolute_path)
+    uploaded_file.seek(0)
+    data = uploaded_file.read()
+    encrypted_data = encrypt_bytes(data)
+    with open(absolute_path, "wb") as f:
+        f.write(encrypted_data)
     return stored_filename, absolute_path
 
 
@@ -243,10 +245,6 @@ def create_file_record(
 
 
 def process_file_upload(conn, upload_root, owner_id, uploaded_file, upload_time):
-    """
-    Validate, hash, deduplicate, store, and audit a file upload.
-    Returns (success, message, file_id).
-    """
     if uploaded_file is None or not uploaded_file.filename:
         return False, "No file selected.", None
 
@@ -265,9 +263,8 @@ def process_file_upload(conn, upload_root, owner_id, uploaded_file, upload_time)
         return False, "Duplicate file detected.", None
 
     stored_filename, _ = store_uploaded_file(upload_root, uploaded_file, extension)
-    disk_hash = compute_sha256_from_path(
-        get_file_absolute_path(upload_root, stored_filename, owner_id)
-    )
+    with open(get_file_absolute_path(upload_root, stored_filename, owner_id), "rb") as f:
+        disk_hash = compute_sha256_from_stream(BytesIO(decrypt_bytes(f.read())))
     if disk_hash != sha256_hash:
         absolute_path = get_file_absolute_path(upload_root, stored_filename, owner_id)
         if os.path.exists(absolute_path):
@@ -319,17 +316,15 @@ def soft_delete_file(conn, file_record, owner_id, timestamp):
 
 
 def verify_file_integrity(conn, upload_root, file_record, actor_user_id, timestamp):
-    """
-    Recompute SHA-256 for the stored file and update status/audit logs.
-    Returns (success, message, new_status, current_hash).
-    """
     absolute_path = get_file_absolute_path(
         upload_root, file_record["stored_filename"], file_record["owner_id"]
     )
     if not os.path.isfile(absolute_path):
         return False, "Stored file could not be located on disk.", file_record["status"], None
 
-    current_hash = compute_sha256_from_path(absolute_path)
+    with open(absolute_path, "rb") as f:
+        encrypted_data = f.read()
+    current_hash = compute_sha256_from_stream(BytesIO(decrypt_bytes(encrypted_data)))
     stored_hash = file_record["sha256_hash"]
 
     if current_hash == stored_hash:
@@ -450,10 +445,6 @@ def get_pending_request(conn, file_id, user_id):
 
 
 def process_file_replacement(conn, upload_root, file_record, uploaded_file, actor_id, timestamp):
-    """
-    Validates, hashes, stores, replaces on-disk file, updates file record, and logs audit.
-    Returns (success, message).
-    """
     if uploaded_file is None or not uploaded_file.filename:
         return False, "No file selected."
 
@@ -469,9 +460,8 @@ def process_file_replacement(conn, upload_root, file_record, uploaded_file, acto
     sha256_hash = compute_sha256_from_stream(uploaded_file)
 
     stored_filename, _ = store_uploaded_file(upload_root, uploaded_file, extension)
-    disk_hash = compute_sha256_from_path(
-        get_file_absolute_path(upload_root, stored_filename, file_record["owner_id"])
-    )
+    with open(get_file_absolute_path(upload_root, stored_filename, file_record["owner_id"]), "rb") as f:
+        disk_hash = compute_sha256_from_stream(BytesIO(decrypt_bytes(f.read())))
     if disk_hash != sha256_hash:
         absolute_path = get_file_absolute_path(upload_root, stored_filename, file_record["owner_id"])
         if os.path.exists(absolute_path):

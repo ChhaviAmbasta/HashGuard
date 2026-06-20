@@ -121,7 +121,14 @@
                                             <td><span class="type-badge">.{{ file.file_extension }}</span></td>
                                             <td>{{ format_file_size(file.file_size) }}</td>
                                             <td>
-                                                <span class="status-badge status-{{ file.status|lower }}">{{ file.status }}</span>
+                                                <div class="status-column">
+                                                    <span class="status-badge status-{{ file.status|lower }}"> 
+                                                        {{ file.status }}
+                                                    </span>
+                                                    <span class="encryption-badge">
+                                                        Encrypted
+                                                    </span>
+                                                </div>
                                             </td>
                                             <td><code class="hash-preview">{{ truncate_hash(file.sha256_hash) }}</code></td>
                                             <td>
