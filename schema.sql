@@ -64,6 +64,7 @@ CREATE TABLE IF NOT EXISTS files (
     file_size INTEGER NOT NULL,
     mime_type TEXT NOT NULL,
     sha256_hash TEXT NOT NULL,
+    content_hash TEXT,
     upload_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_verified TIMESTAMP,
     status TEXT NOT NULL DEFAULT 'ACTIVE',

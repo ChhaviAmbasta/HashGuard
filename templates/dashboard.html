@@ -20,6 +20,9 @@
                     </div>
                     <div class="dashboard-actions d-flex align-items-center">
                         <a href="{{ url_for('files.upload_page') }}" class="btn btn-outline-light btn-sm me-2">Upload Page</a>
+                        <a href="{{ url_for('compare_file') }}" class="btn btn-outline-light btn-sm me-2">
+                            <i class="fa-solid fa-code-compare me-1"></i>Compare File
+                        </a>
                         <a href="{{ url_for('requests_page') }}" class="btn btn-outline-light btn-sm me-2">
                             <i class="fa-solid fa-code-pull-request me-1"></i>Request Center
                         </a>
@@ -83,11 +86,7 @@
                     <span class="security-badge ms-2">&#9201; Session timeout: 30 minutes</span>
                 </div>
 
-                <section class="dashboard-section">
-                    <h2 class="section-title">Upload File</h2>
-                    <p class="section-description">Upload files to the centralized repository. Ownership is tracked in the database via your account.</p>
-                    {% include "partials/upload_form.html" %}
-                </section>
+
 
                 <section class="dashboard-section mt-4">
                     <div class="section-header-row">

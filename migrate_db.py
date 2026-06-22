@@ -70,6 +70,7 @@ def migrate_file_storage_tables(conn):
                 file_size INTEGER NOT NULL,
                 mime_type TEXT NOT NULL,
                 sha256_hash TEXT NOT NULL,
+                content_hash TEXT,
                 upload_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 last_verified TIMESTAMP,
                 status TEXT NOT NULL DEFAULT 'ACTIVE',
@@ -78,6 +79,9 @@ def migrate_file_storage_tables(conn):
             )
             """
         )
+    else:
+        if not column_exists(conn, "files", "content_hash"):
+            conn.execute("ALTER TABLE files ADD COLUMN content_hash TEXT")
 
     if not table_exists(conn, "file_audit_logs"):
         conn.execute(

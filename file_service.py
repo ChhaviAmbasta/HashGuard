@@ -12,7 +12,7 @@ from datetime import datetime
 from io import BytesIO
 
 from utils.encryption import decrypt_bytes, encrypt_bytes
-from utils.file_hash import compute_sha256_from_path, compute_sha256_from_stream
+from utils.file_hash import compute_sha256_from_path, compute_sha256_from_stream, compute_content_hash_from_stream
 from utils.file_validator import validate_upload
 
 FILE_STATUS_ACTIVE = "ACTIVE"
@@ -96,6 +96,21 @@ def user_has_duplicate_file(conn, owner_id, sha256_hash):
         LIMIT 1
         """,
         (owner_id, sha256_hash),
+    ).fetchone()
+    return row is not None
+
+
+def user_has_duplicate_content(conn, owner_id, content_hash):
+    row = conn.execute(
+        """
+        SELECT id
+        FROM files
+        WHERE owner_id = ?
+          AND content_hash = ?
+          AND is_deleted = 0
+        LIMIT 1
+        """,
+        (owner_id, content_hash),
     ).fetchone()
     return row is not None
 
@@ -209,6 +224,7 @@ def create_file_record(
     file_size,
     mime_type,
     sha256_hash,
+    content_hash,
     upload_time,
 ):
     cursor = conn.execute(
@@ -221,12 +237,13 @@ def create_file_record(
             file_size,
             mime_type,
             sha256_hash,
+            content_hash,
             upload_time,
             last_verified,
             status,
             is_deleted
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             owner_id,
@@ -236,9 +253,11 @@ def create_file_record(
             file_size,
             mime_type,
             sha256_hash,
+            content_hash,
             upload_time,
             upload_time,
             FILE_STATUS_ACTIVE,
+            0,
         ),
     )
     return cursor.lastrowid
@@ -258,9 +277,13 @@ def process_file_upload(conn, upload_root, owner_id, uploaded_file, upload_time)
         return False, error_message, None
 
     sha256_hash = compute_sha256_from_stream(uploaded_file)
+    content_hash = compute_content_hash_from_stream(uploaded_file, extension)
 
     if user_has_duplicate_file(conn, owner_id, sha256_hash):
         return False, "Duplicate file detected.", None
+
+    if user_has_duplicate_content(conn, owner_id, content_hash):
+        return False, "Duplicate content detected. This file already exists in the repository.", None
 
     stored_filename, _ = store_uploaded_file(upload_root, uploaded_file, extension)
     with open(get_file_absolute_path(upload_root, stored_filename, owner_id), "rb") as f:
@@ -281,6 +304,7 @@ def process_file_upload(conn, upload_root, owner_id, uploaded_file, upload_time)
         file_size,
         mime_type,
         sha256_hash,
+        content_hash,
         upload_time,
     )
     log_file_audit(
@@ -458,6 +482,19 @@ def process_file_replacement(conn, upload_root, file_record, uploaded_file, acto
         return False, error_message
 
     sha256_hash = compute_sha256_from_stream(uploaded_file)
+    content_hash = compute_content_hash_from_stream(uploaded_file, extension)
+
+    if user_has_duplicate_content(conn, file_record["owner_id"], content_hash):
+        existing = conn.execute(
+            """
+            SELECT id, original_filename FROM files
+            WHERE owner_id = ? AND content_hash = ? AND is_deleted = 0 AND id != ?
+            LIMIT 1
+            """,
+            (file_record["owner_id"], content_hash, file_record["id"]),
+        ).fetchone()
+        if existing:
+            return False, f"Duplicate content detected. This file already exists as '{existing['original_filename']}'.", None
 
     stored_filename, _ = store_uploaded_file(upload_root, uploaded_file, extension)
     with open(get_file_absolute_path(upload_root, stored_filename, file_record["owner_id"]), "rb") as f:
@@ -486,11 +523,12 @@ def process_file_replacement(conn, upload_root, file_record, uploaded_file, acto
             file_size = ?,
             mime_type = ?,
             sha256_hash = ?,
+            content_hash = ?,
             last_verified = ?,
             status = 'ACTIVE'
         WHERE id = ?
         """,
-        (stored_filename, extension, file_size, mime_type, sha256_hash, timestamp, file_record["id"]),
+        (stored_filename, extension, file_size, mime_type, sha256_hash, content_hash, timestamp, file_record["id"]),
     )
 
     log_file_audit(

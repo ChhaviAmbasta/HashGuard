@@ -18,7 +18,8 @@ from flask_mail import Mail, Message
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from file_routes import create_files_blueprint
-from file_service import list_all_files
+from file_service import list_all_files, get_file_by_id
+from utils.file_hash import compute_content_hash_from_stream, compute_sha256_from_stream
 
 load_dotenv()
 
@@ -60,6 +61,26 @@ def get_db_connection():
     conn = sqlite3.connect(DATABASE_PATH)
     conn.row_factory = sqlite3.Row
     return conn
+
+
+def _ensure_content_hash_column():
+    conn = get_db_connection()
+    try:
+        table_row = conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='files'"
+        ).fetchone()
+        if not table_row:
+            return
+        columns = conn.execute("PRAGMA table_info(files)").fetchall()
+        column_names = [col["name"] for col in columns]
+        if "content_hash" not in column_names:
+            conn.execute("ALTER TABLE files ADD COLUMN content_hash TEXT")
+            conn.commit()
+    finally:
+        conn.close()
+
+
+_ensure_content_hash_column()
 
 
 def hash_security_answer(answer):
@@ -893,6 +914,92 @@ def dashboard():
         username=session.get("username"),
         files=enriched_files,
         current_user_id=session["user_id"],
+    )
+
+
+@app.route("/compare-file", methods=["GET", "POST"])
+@login_required
+def compare_file():
+    conn = get_db_connection()
+    try:
+        files = list_all_files(conn)
+    finally:
+        conn.close()
+
+    if request.method == "POST":
+        file_id = request.form.get("file_id")
+        uploaded_file = request.files.get("compare_file")
+
+        if not file_id or not uploaded_file or not uploaded_file.filename:
+            flash("Please select a repository file and upload a local file to compare.", "warning")
+            return render_template(
+                "compare_file.html",
+                username=session.get("username"),
+                files=files,
+            )
+
+        conn = get_db_connection()
+        try:
+            file_record = get_file_by_id(conn, int(file_id))
+            if not file_record:
+                flash("Selected repository file not found.", "danger")
+                return render_template(
+                    "compare_file.html",
+                    username=session.get("username"),
+                    files=files,
+                )
+
+            uploaded_file.seek(0)
+            uploaded_content_hash = compute_content_hash_from_stream(uploaded_file, file_record["file_extension"])
+            stored_content_hash = file_record["content_hash"]
+
+            print(f"[DEBUG compare_file] stored_content_hash={stored_content_hash}")
+            print(f"[DEBUG compare_file] uploaded_content_hash={uploaded_content_hash}")
+            print(f"[DEBUG compare_file] file_extension={file_record['file_extension']}")
+
+            if stored_content_hash is None or stored_content_hash == "":
+                flash("Content hash not available for this file. Please re-upload to enable content-based comparison.", "warning")
+                return render_template(
+                    "compare_file.html",
+                    username=session.get("username"),
+                    files=files,
+                    selected_file_id=int(file_id),
+                )
+
+            is_match = uploaded_content_hash == stored_content_hash
+            result = "Integrity Maintained" if is_match else "File Modified"
+            category = "success" if is_match else "danger"
+
+            print(f"[DEBUG compare_file] is_match={is_match} result={result}")
+
+            log_audit(
+                conn,
+                session["user_id"],
+                file_record["id"],
+                "COMPARE",
+                f"Compared uploaded file with '{file_record['original_filename']}'. Result: {result}. "
+                f"Content hash match: {is_match}.",
+            )
+            conn.commit()
+            flash(f"Comparison result: {result}", category)
+        finally:
+            conn.close()
+
+        return render_template(
+            "compare_file.html",
+            username=session.get("username"),
+            files=files,
+            result=result,
+            category=category,
+            uploaded_hash=uploaded_content_hash,
+            stored_hash=stored_content_hash,
+            selected_file_id=int(file_id),
+        )
+
+    return render_template(
+        "compare_file.html",
+        username=session.get("username"),
+        files=files,
     )
 
 
