@@ -1289,6 +1289,58 @@ def revoke_permission(permission_id):
     return redirect(url_for("requests_page"))
 
 
+@app.route("/audit-logs")
+@login_required
+def audit_logs():
+    conn = get_db_connection()
+    try:
+        search = request.args.get("search", "").strip()
+        page = request.args.get("page", 1, type=int)
+        per_page = 20
+        offset = (page - 1) * per_page
+
+        base_query = """
+            SELECT a.id, a.timestamp, a.action, a.details, a.ip_address,
+                   u.username, f.original_filename
+            FROM audit_logs a
+            LEFT JOIN users u ON a.user_id = u.id
+            LEFT JOIN files f ON a.file_id = f.id
+        """
+        count_query = """
+            SELECT COUNT(*) as total
+            FROM audit_logs a
+            LEFT JOIN users u ON a.user_id = u.id
+            LEFT JOIN files f ON a.file_id = f.id
+        """
+        params = []
+
+        if search:
+            like = f"%{search}%"
+            base_query += " WHERE u.username LIKE ? OR a.action LIKE ? OR a.details LIKE ? OR a.ip_address LIKE ? OR f.original_filename LIKE ?"
+            count_query += " WHERE u.username LIKE ? OR a.action LIKE ? OR a.details LIKE ? OR a.ip_address LIKE ? OR f.original_filename LIKE ?"
+            params = [like, like, like, like, like]
+
+        base_query += " ORDER BY a.timestamp DESC LIMIT ? OFFSET ?"
+
+        total_row = conn.execute(count_query, params).fetchone()
+        total = total_row["total"] if total_row else 0
+        total_pages = max(1, (total + per_page - 1) // per_page)
+
+        logs = conn.execute(base_query, params + [per_page, offset]).fetchall()
+    finally:
+        conn.close()
+
+    return render_template(
+        "audit_logs.html",
+        username=session.get("username"),
+        logs=logs,
+        search=search,
+        page=page,
+        total_pages=total_pages,
+        total=total,
+    )
+
+
 files_blueprint = create_files_blueprint(
     login_required=login_required,
     get_db_connection=get_db_connection,

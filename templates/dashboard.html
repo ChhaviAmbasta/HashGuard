@@ -19,12 +19,17 @@
                         <p class="welcome-subtext">HashGuard Centralized File Repository</p>
                     </div>
                     <div class="dashboard-actions d-flex align-items-center">
-                        <a href="{{ url_for('files.upload_page') }}" class="btn btn-outline-light btn-sm me-2">Upload Page</a>
+                        <a href="{{ url_for('files.upload_page') }}" class="btn btn-outline-light btn-sm me-2">
+    <i class="fa-solid fa-cloud-arrow-up me-1"></i>Upload Page
+</a>
+                        <a href="{{ url_for('audit_logs') }}" class="btn btn-outline-light btn-sm me-2">
+                            <i class="fa-solid fa-clipboard-list me-1"></i>Audit Logs
+                        </a>
                         <a href="{{ url_for('compare_file') }}" class="btn btn-outline-light btn-sm me-2">
                             <i class="fa-solid fa-code-compare me-1"></i>Compare File
                         </a>
                         <a href="{{ url_for('requests_page') }}" class="btn btn-outline-light btn-sm me-2">
-                            <i class="fa-solid fa-code-pull-request me-1"></i>Request Center
+                            <i class="fa-solid fa-user-lock me-1"></i>Request Center
                         </a>
                         
                         <!-- Notification Bell Dropdown -->
