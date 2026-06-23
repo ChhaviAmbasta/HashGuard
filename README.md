@@ -80,24 +80,24 @@ HashGuard follows a layered architecture with clear separation of concerns:
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                     Frontend                         │
+│                     Frontend                        │
 │  Bootstrap 5.3.3 / Custom Cybersecurity Theme       │
 │  /templates + /static/css + /static/js              │
 ├─────────────────────────────────────────────────────┤
-│                  Flask Application                   │
+│                  Flask Application                  │
 │  app.py — routes, decorators, auth logic,           │
 │  business workflows, notification system            │
 ├─────────────────────────────────────────────────────┤
-│                 Service Layer                        │
+│                 Service Layer                       │
 │  file_service.py — upload, download, integrity,     │
 │  permissions, audit, replacement logic              │
 ├─────────────────────────────────────────────────────┤
-│                   Utilities                          │
+│                   Utilities                         │
 │  utils/encryption.py — AES-256-GCM                  │
-│  utils/file_hash.py — SHA-256 / content hashing    │
+│  utils/file_hash.py — SHA-256 / content hashing     │
 │  utils/file_validator.py — type & size validation   │
 ├─────────────────────────────────────────────────────┤
-│                 Data Layer                           │
+│                 Data Layer                          │
 │  Raw SQLite3 via sqlite3.Row                        │
 │  schema.sql — 7 tables, 11 indexes                  │
 │  create_db.py / migrate_db.py                       │
