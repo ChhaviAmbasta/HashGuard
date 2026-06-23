@@ -484,6 +484,8 @@ def process_file_replacement(conn, upload_root, file_record, uploaded_file, acto
     sha256_hash = compute_sha256_from_stream(uploaded_file)
     content_hash = compute_content_hash_from_stream(uploaded_file, extension)
 
+    print(f"[DEBUG replace] uploaded_size={file_size} sha256={sha256_hash}")
+
     if user_has_duplicate_content(conn, file_record["owner_id"], content_hash):
         existing = conn.execute(
             """
@@ -494,13 +496,19 @@ def process_file_replacement(conn, upload_root, file_record, uploaded_file, acto
             (file_record["owner_id"], content_hash, file_record["id"]),
         ).fetchone()
         if existing:
-            return False, f"Duplicate content detected. This file already exists as '{existing['original_filename']}'.", None
+            return False, "Duplicate content detected. This file already exists as '{}'.".format(existing["original_filename"])
 
-    stored_filename, _ = store_uploaded_file(upload_root, uploaded_file, extension)
-    with open(get_file_absolute_path(upload_root, stored_filename, file_record["owner_id"]), "rb") as f:
-        disk_hash = compute_sha256_from_stream(BytesIO(decrypt_bytes(f.read())))
+    stored_filename, absolute_path = store_uploaded_file(upload_root, uploaded_file, extension)
+    print(f"[DEBUG replace] stored_path={absolute_path}")
+
+    with open(absolute_path, "rb") as f:
+        encrypted_data = f.read()
+    print(f"[DEBUG replace] encrypted_size={len(encrypted_data)}")
+    decrypted_data = decrypt_bytes(encrypted_data)
+    print(f"[DEBUG replace] decrypted_size={len(decrypted_data)}")
+    disk_hash = compute_sha256_from_stream(BytesIO(decrypted_data))
+    print(f"[DEBUG replace] disk_sha256={disk_hash}")
     if disk_hash != sha256_hash:
-        absolute_path = get_file_absolute_path(upload_root, stored_filename, file_record["owner_id"])
         if os.path.exists(absolute_path):
             os.remove(absolute_path)
         return False, "File integrity check failed during replacement upload."
