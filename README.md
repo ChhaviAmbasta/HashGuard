@@ -372,8 +372,8 @@ Based on the current architecture, the following enhancements would be natural e
 ---
 ## Author
 
-**Chhavi Ambasta**
-**Shafaq Ahmed**
-**Khushi Singh**
+- **Chhavi Ambasta**
+- **Shafaq Ahmed**
+- **Khushi Singh**
 
 HashGuard was developed as a cybersecurity-focused file integrity and access management system featuring AES-256 encryption, SHA-256 integrity verification, audit logging, file comparison, and role-based access control.
