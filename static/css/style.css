@@ -545,6 +545,7 @@ body {
 }
 
 @media (max-width: 576px) {
+
     .auth-card,
     .dashboard-card {
         padding: 1.5rem;

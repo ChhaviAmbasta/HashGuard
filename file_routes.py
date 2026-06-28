@@ -6,6 +6,7 @@ Purpose: Flask blueprint for authenticated file upload, global repository listin
 """
 
 import os
+from io import BytesIO
 
 from flask import Blueprint, flash, redirect, render_template, request, send_file, session, url_for
 
@@ -15,20 +16,19 @@ from file_service import (
     get_file_audit_logs,
     get_file_by_id,
     get_owned_file,
+    get_pending_request,
     get_upload_root,
+    get_user_file_permission,
+    has_read_permission,
+    has_write_permission,
     is_file_owner,
+    process_file_replacement,
     process_file_upload,
     record_download_audit,
     soft_delete_file,
     truncate_hash,
     verify_file_integrity,
-    get_user_file_permission,
-    has_read_permission,
-    has_write_permission,
-    get_pending_request,
-    process_file_replacement,
 )
-from io import BytesIO
 from utils.encryption import decrypt_bytes
 
 
@@ -38,7 +38,7 @@ def create_files_blueprint(login_required, get_db_connection, utc_now_str, base_
     os.makedirs(upload_root, exist_ok=True)
 
     def current_user_id():
-        return session["user_id"]
+        return session.get("user_id")
 
     @files_bp.route("/upload", methods=["GET", "POST"])
     @login_required
@@ -129,7 +129,7 @@ def create_files_blueprint(login_required, get_db_connection, utc_now_str, base_
                 file_record["owner_id"],
             )
             if not os.path.isfile(absolute_path):
-                flash("Stored file could not be located.", "danger")
+                flash("Stored file could not be located on disk.", "danger")
                 return redirect(url_for("files.file_details", file_id=file_id))
 
             timestamp = utc_now_str()
@@ -139,15 +139,19 @@ def create_files_blueprint(login_required, get_db_connection, utc_now_str, base_
         finally:
             conn.close()
 
-        with open(absolute_path, "rb") as f:
-            encrypted_data = f.read()
-        decrypted_data = decrypt_bytes(encrypted_data)
-        return send_file(
-            BytesIO(decrypted_data),
-            as_attachment=True,
-            download_name=file_record["original_filename"],
-            mimetype=file_record["mime_type"],
-        )
+        try:
+            with open(absolute_path, "rb") as f:
+                encrypted_data = f.read()
+            decrypted_data = decrypt_bytes(encrypted_data)
+            return send_file(
+                BytesIO(decrypted_data),
+                as_attachment=True,
+                download_name=file_record["original_filename"],
+                mimetype=file_record["mime_type"],
+            )
+        except Exception as e:
+            flash(f"Error serving file: {str(e)}", "danger")
+            return redirect(url_for("files.file_details", file_id=file_id))
 
     @files_bp.route("/files/<int:file_id>/verify", methods=["POST"])
     @login_required
@@ -220,7 +224,7 @@ def create_files_blueprint(login_required, get_db_connection, utc_now_str, base_
                 return redirect(url_for("dashboard"))
 
             # Check if user is owner
-            if file_record["owner_id"] == current_user_id():
+            if int(file_record["owner_id"]) == int(current_user_id()):
                 flash("You are the owner of this file.", "info")
                 return redirect(url_for("files.file_details", file_id=file_id))
 
@@ -313,7 +317,7 @@ def create_files_blueprint(login_required, get_db_connection, utc_now_str, base_
                 log_audit(conn, current_user_id(), file_id, "UPLOAD", f"Replaced contents of file '{file_record['original_filename']}'.")
                 
                 # Notify the owner if actor is NOT owner
-                if file_record["owner_id"] != current_user_id():
+                if int(file_record["owner_id"]) != int(current_user_id()):
                     create_notification(
                         conn,
                         file_record["owner_id"],

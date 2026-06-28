@@ -8,7 +8,7 @@ Purpose: Enforce upload restrictions including allowed/blocked extensions
 import os
 
 ALLOWED_EXTENSIONS = frozenset(
-    {"pdf", "txt", "docx", "xlsx", "pptx", "png", "jpg", "jpeg"}
+    {"pdf", "txt", "docx", "xlsx", "pptx", "png", "jpg", "jpeg", "zip"}
 )
 
 BLOCKED_EXTENSIONS = frozenset({"exe", "bat", "cmd", "msi", "sh", "apk"})

@@ -53,6 +53,7 @@ def guess_mime_type(original_filename, extension):
         "png": "image/png",
         "jpg": "image/jpeg",
         "jpeg": "image/jpeg",
+        "zip": "application/zip",
     }
     return fallback_map.get(extension, "application/octet-stream")
 
@@ -166,7 +167,9 @@ def list_all_files(conn):
 
 
 def is_file_owner(file_record, user_id):
-    return file_record["owner_id"] == user_id
+    if not file_record or user_id is None:
+        return False
+    return int(file_record["owner_id"]) == int(user_id)
 
 
 def get_file_audit_logs(conn, file_id):
@@ -423,10 +426,16 @@ def get_user_file_permission(conn, file_id, user_id):
     Returns the active permission type ('READ_ONLY', 'READ_WRITE', or 'OWNER') for the user on the file,
     or None if no permission.
     """
+    try:
+        file_id = int(file_id)
+        user_id = int(user_id)
+    except (TypeError, ValueError):
+        return None
+
     row = conn.execute("SELECT owner_id FROM files WHERE id = ? AND is_deleted = 0", (file_id,)).fetchone()
     if not row:
         return None
-    if row["owner_id"] == user_id:
+    if int(row["owner_id"]) == user_id:
         return "OWNER"
 
     perm_row = conn.execute(
@@ -458,6 +467,12 @@ def get_pending_request(conn, file_id, user_id):
     """
     Returns the pending access request record if any.
     """
+    try:
+        file_id = int(file_id)
+        user_id = int(user_id)
+    except (TypeError, ValueError):
+        return None
+
     return conn.execute(
         """
         SELECT * FROM access_requests
@@ -548,4 +563,3 @@ def process_file_replacement(conn, upload_root, file_record, uploaded_file, acto
         timestamp,
     )
     return True, "File contents replaced successfully."
-

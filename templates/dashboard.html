@@ -42,9 +42,9 @@
                                     </span>
                                 {% endif %}
                             </button>
-                            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark p-2" aria-labelledby="notificationBell" style="width: 290px; max-height: 400px; overflow-y: auto; background-color: var(--bg-card); border: 1px solid var(--border-color);">
+                            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark p-2 notification-dropdown-menu" aria-labelledby="notificationBell">
                                 <li class="dropdown-header text-info d-flex justify-content-between align-items-center p-2">
-                                    <span class="fw-bold">Notifications</span>
+                                    <span class="fw-bold fs-6">Notifications</span>
                                     {% if unread_notifications_count > 0 %}
                                         <form action="{{ url_for('mark_notifications_read') }}" method="POST" class="d-inline">
                                             <button type="submit" class="btn btn-link btn-xs text-info p-0 text-decoration-none fw-bold" style="font-size: 0.75rem;">Mark all read</button>
@@ -54,22 +54,22 @@
                                 <li><hr class="dropdown-divider my-1"></li>
                                 {% if notifications %}
                                     {% for n in notifications %}
-                                        <li class="p-2 {% if n.is_read == 0 %}bg-dark-subtle{% endif %}">
+                                        <li class="p-2 notification-item {% if n.is_read == 0 %}unread-notification{% endif %}">
                                             <div class="d-flex flex-column">
                                                 <div class="d-flex align-items-center justify-content-between">
-                                                    <span class="fw-bold" style="font-size: 0.8rem; color: var(--text-primary);">{{ n.title }}</span>
+                                                    <span class="notification-title fw-bold">{{ n.title }}</span>
                                                     {% if n.type == 'TAMPER_ALERT' %}
-                                                        <span class="badge bg-danger p-1 text-uppercase" style="font-size: 0.55rem;">Alert</span>
+                                                        <span class="badge bg-danger p-1 text-uppercase" style="font-size: 0.6rem;">Alert</span>
                                                     {% endif %}
                                                 </div>
-                                                <small class="text-muted mt-1" style="font-size: 0.75rem; word-break: break-word; white-space: normal;">{{ n.message }}</small>
-                                                <small class="text-white-50 mt-1" style="font-size: 0.65rem;">{{ n.created_at }}</small>
+                                                <small class="notification-message mt-1">{{ n.message }}</small>
+                                                <small class="notification-time mt-1">{{ n.created_at }}</small>
                                             </div>
                                         </li>
                                         <li><hr class="dropdown-divider my-1"></li>
                                     {% endfor %}
                                 {% else %}
-                                    <li class="text-center p-3 text-muted" style="font-size: 0.85rem;">No notifications</li>
+                                    <li class="text-center p-3 text-white-50" style="font-size: 0.85rem;">No notifications</li>
                                 {% endif %}
                             </ul>
                         </div>
@@ -90,8 +90,6 @@
                     <span class="security-badge">&#128274; Authenticated Session Active</span>
                     <span class="security-badge ms-2">&#9201; Session timeout: 30 minutes</span>
                 </div>
-
-
 
                 <section class="dashboard-section mt-4">
                     <div class="section-header-row">
@@ -138,11 +136,11 @@
                                             <td>
                                                 <div class="file-actions">
                                                     {% if file.user_permission %}
-                                                        <a href="{{ url_for('files.download_file', file_id=file.id) }}" class="btn btn-outline-light btn-sm">Download</a>
+                                                        <a href="{{ url_for('files.download_file', file_id=file.id) }}" class="btn btn-action btn-action-download btn-sm">Download</a>
                                                         <form action="{{ url_for('files.verify_file', file_id=file.id) }}" method="POST" class="d-inline">
-                                                            <button type="submit" class="btn btn-outline-light btn-sm">Verify Integrity</button>
+                                                            <button type="submit" class="btn btn-action btn-action-verify btn-sm">Verify Integrity</button>
                                                         </form>
-                                                        <a href="{{ url_for('files.file_details', file_id=file.id) }}" class="btn btn-outline-light btn-sm">View Details</a>
+                                                        <a href="{{ url_for('files.file_details', file_id=file.id) }}" class="btn btn-action btn-action-details btn-sm">View Details</a>
                                                         
                                                         {% if file.user_permission == 'OWNER' %}
                                                             <form action="{{ url_for('files.delete_file', file_id=file.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Soft delete this file?');">

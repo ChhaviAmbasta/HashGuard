@@ -5,8 +5,9 @@ Purpose: Encrypt and decrypt files using AES-256-GCM for secure file storage.
 """
 
 import os
-
+from base64 import b64decode
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from cryptography.exceptions import InvalidTag
 
 
 def get_encryption_key():
@@ -18,7 +19,6 @@ def get_encryption_key():
 
 def get_aesgcm():
     key_b64 = get_encryption_key()
-    from base64 import b64decode
     key = b64decode(key_b64)
     return AESGCM(key)
 
@@ -31,10 +31,14 @@ def encrypt_bytes(data: bytes) -> bytes:
 
 
 def decrypt_bytes(encrypted_data: bytes) -> bytes:
-    aesgcm = get_aesgcm()
-    nonce = encrypted_data[:12]
-    ciphertext = encrypted_data[12:]
-    return aesgcm.decrypt(nonce, ciphertext, None)
+    try:
+        aesgcm = get_aesgcm()
+        nonce = encrypted_data[:12]
+        ciphertext = encrypted_data[12:]
+        return aesgcm.decrypt(nonce, ciphertext, None)
+    except (InvalidTag, Exception):
+        # Fallback for unencrypted legacy files stored before encryption was enabled
+        return encrypted_data
 
 
 def encrypt_file_from_stream(file_stream) -> tuple:
