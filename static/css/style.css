@@ -361,31 +361,116 @@ body {
 }
 
 .files-table {
+    table-layout: auto;
     margin-bottom: 0;
     color: var(--text-primary);
 }
 
-.files-table thead th {
+.files-table.table > thead > tr > th {
     background-color: var(--bg-primary);
     border-bottom: 1px solid var(--border-color);
-    color: var(--text-muted);
+    color: #ffffff;
     font-size: 0.8rem;
+    font-weight: bold;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-}
-
-.files-table tbody td {
-    border-bottom: 1px solid var(--border-color);
+    text-align: center;
     vertical-align: middle;
 }
 
-.files-table tbody tr:last-child td {
+.files-table.table > tbody > tr > td {
+    background-color: var(--bg-card);
+    border-bottom: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+    vertical-align: middle;
+    color: #C9D1D9;
+    transition: background-color 0.25s ease;
+}
+
+.files-table.table > tbody > tr:last-child > td {
     border-bottom: none;
 }
 
+.files-table.table > tbody > tr:hover > td {
+    background-color: #1C2128;
+}
+
+.files-table.table > thead > tr > th,
+.files-table.table > tbody > tr > td {
+    border-right: 1px solid var(--border-color);
+}
+
+.files-table.table > thead > tr > th:last-child,
+.files-table.table > tbody > tr > td:last-child {
+    border-right: none;
+}
+
+.files-table.table > thead > tr > th:nth-child(1),
+.files-table.table > tbody > tr > td:nth-child(1) {
+    min-width: 180px;
+    max-width: 280px;
+}
+
+.files-table.table > thead > tr > th:nth-child(2) {
+    min-width: 110px;
+}
+.files-table.table > tbody > tr > td:nth-child(2) {
+    min-width: 80px;
+}
+
+.files-table.table > thead > tr > th:nth-child(3) {
+    min-width: 110px;
+}
+.files-table.table > tbody > tr > td:nth-child(3) {
+    min-width: 80px;
+}
+
+.files-table.table > thead > tr > th:nth-child(4),
+.files-table.table > tbody > tr > td:nth-child(4) {
+    min-width: 35px;
+}
+
+.files-table.table > thead > tr > th:nth-child(5),
+.files-table.table > tbody > tr > td:nth-child(5) {
+    min-width: 45px;
+}
+
+.files-table.table > thead > tr > th:nth-child(6),
+.files-table.table > tbody > tr > td:nth-child(6) {
+    min-width: 100px;
+}
+
+.files-table.table > thead > tr > th:nth-child(7) {
+    min-width: 95px;
+}
+.files-table.table > tbody > tr > td:nth-child(7) {
+    min-width: 70px;
+}
+
+.files-table.table > thead > tr > th:nth-child(8),
+.files-table.table > tbody > tr > td:nth-child(8) {
+    min-width: 220px;
+}
+
 .filename-cell {
-    max-width: 220px;
     word-break: break-word;
+    color: #FFFFFF;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.filename-cell:hover {
+    color: var(--info);
+}
+
+.files-table .hash-preview {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+    max-width: 100%;
+    vertical-align: middle;
+    word-break: normal;
 }
 
 .type-badge,
@@ -599,9 +684,165 @@ body {
     color: #fff !important;
 }
 
+.repo-actions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.35rem 0.5rem;
+    justify-content: center;
+    max-width: 220px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.repo-actions > a,
+.repo-actions > form {
+    justify-self: center;
+}
+
+.repo-actions > form {
+    display: inline-block;
+}
+
+.repo-actions > :only-child {
+    grid-column: 1 / -1;
+    justify-self: center;
+    align-self: center;
+}
+
+.repo-actions .btn {
+    width: 100px !important;
+    height: 34px;
+    padding: 0 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    box-sizing: border-box;
+    margin: 0;
+    border-radius: 0.25rem !important;
+}
+
+.repo-actions .btn:not(.btn-danger):not(.btn-primary):not(.btn-outline-secondary) {
+    color: #FFFFFF !important;
+    background: #21262D !important;
+    border: 1px solid #30363D !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.repo-actions .btn:not(.btn-danger):not(.btn-primary):not(.btn-outline-secondary):hover {
+    background: #2B3139 !important;
+    color: #FFFFFF !important;
+}
+
+.repo-actions .btn-danger {
+    color: #dc3545 !important;
+    background: #21262D !important;
+    border: 1px solid #30363D !important;
+}
+
+.repo-actions .btn-danger:hover {
+    background: #2B3139 !important;
+    color: #ff6b6b !important;
+    border-color: #30363D !important;
+}
+
+.repo-actions .access-pending-btn {
+    width: 210px !important;
+}
+
 .status-column {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    align-items: flex-start;
+    align-items: center;
+}
+
+.owner-badge {
+    display: inline-flex;
+    align-items: center;
+    background-color: rgba(88, 166, 255, 0.12);
+    color: #58A6FF;
+    border: 1px solid rgba(88, 166, 255, 0.3);
+    border-radius: 999px;
+    padding: 0.15rem 0.6rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.security-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background-color: rgba(35, 134, 54, 0.15);
+    color: #3FB950;
+    border: 1px solid rgba(35, 134, 54, 0.3);
+    border-radius: 20px;
+    padding: 0.35rem 0.85rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+}
+
+@media (max-width: 576px) {
+
+    .auth-card,
+    .dashboard-card {
+        padding: 1.5rem;
+    }
+
+    .brand-title {
+        font-size: 1.5rem;
+    }
+
+    .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .details-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Custom Extensions for Notification Bell and Access Control */
+.hide-caret::after {
+    display: none !important;
+}
+
+.bg-dark-subtle {
+    background-color: rgba(35, 134, 54, 0.05) !important;
+    border-left: 3px solid var(--info);
+}
+
+.btn-xs {
+    padding: 0.15rem 0.3rem;
+    font-size: 0.75rem;
+    border-radius: 4px;
+}
+
+.dropdown-menu-dark .dropdown-item:hover {
+    background-color: var(--border-color);
+}
+
+.file-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    justify-content: center;
+}
+
+.file-actions .btn {
+    min-width: 140px !important;
+    color: #000 !important;
+    background: #fff !important;
+    border: 1px solid #ccc !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.file-actions .btn:hover {
+    background: #0d6efd !important;
+    color: #fff !important;
 }

@@ -101,28 +101,28 @@
 
                     {% if files %}
                         <div class="table-responsive files-table-wrapper mt-3">
-                            <table class="table files-table align-middle">
-                                <thead>
-                                    <tr>
-                                        <th>File Name</th>
-                                        <th>Uploaded By</th>
-                                        <th>Upload Date</th>
-                                        <th>Type</th>
-                                        <th>Size</th>
-                                        <th>Status</th>
-                                        <th>SHA-256</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
+                                <table class="table files-table align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th class="text-center">File Name</th>
+                                            <th class="text-center">Uploaded By</th>
+                                            <th class="text-center">Upload Date</th>
+                                            <th class="text-center">Type</th>
+                                            <th class="text-center">Size</th>
+                                            <th class="text-center">Status</th>
+                                            <th class="text-center">SHA-256</th>
+                                            <th class="text-center">Actions</th>
+                                        </tr>
+                                    </thead>
                                 <tbody>
                                     {% for file in files %}
                                         <tr>
-                                            <td class="filename-cell">{{ file.original_filename }}</td>
-                                            <td><span class="owner-badge">{{ file.owner_username }}</span></td>
-                                            <td>{{ file.upload_time }}</td>
-                                            <td><span class="type-badge">.{{ file.file_extension }}</span></td>
-                                            <td>{{ format_file_size(file.file_size) }}</td>
-                                            <td>
+                                            <td class="filename-cell text-start">{{ file.original_filename }}</td>
+                                            <td class="text-center"><span class="owner-badge">{{ file.owner_username }}</span></td>
+                                            <td class="text-center">{{ file.upload_time }}</td>
+                                            <td class="text-center"><span class="type-badge">.{{ file.file_extension }}</span></td>
+                                            <td class="text-center">{{ format_file_size(file.file_size) }}</td>
+                                            <td class="text-center">
                                                 <div class="status-column">
                                                     <span class="status-badge status-{{ file.status|lower }}"> 
                                                         {{ file.status }}
@@ -132,9 +132,9 @@
                                                     </span>
                                                 </div>
                                             </td>
-                                            <td><code class="hash-preview">{{ truncate_hash(file.sha256_hash) }}</code></td>
-                                            <td>
-                                                <div class="file-actions">
+                                            <td class="text-center"><code class="hash-preview">{{ truncate_hash(file.sha256_hash) }}</code></td>
+                                            <td class="text-center">
+                                                <div class="repo-actions">
                                                     {% if file.user_permission %}
                                                         <a href="{{ url_for('files.download_file', file_id=file.id) }}" class="btn btn-action btn-action-download btn-sm">Download</a>
                                                         <form action="{{ url_for('files.verify_file', file_id=file.id) }}" method="POST" class="d-inline">
@@ -149,11 +149,11 @@
                                                         {% endif %}
                                                     {% else %}
                                                         {% if file.has_pending_request %}
-                                                            <button class="btn btn-outline-secondary btn-sm" disabled>
+                                                            <button class="btn btn-outline-secondary btn-sm access-pending-btn" disabled>
                                                                 <i class="fa-solid fa-hourglass-half me-1"></i>Access Pending
                                                             </button>
                                                         {% else %}
-                                                            <a href="{{ url_for('files.request_access', file_id=file.id) }}" class="btn btn-primary btn-sm">
+                                                            <a href="{{ url_for('files.request_access', file_id=file.id) }}" class="btn btn-primary btn-sm access-pending-btn">
                                                                 <i class="fa-solid fa-lock me-1"></i>Request Access
                                                             </a>
                                                         {% endif %}
