@@ -672,16 +672,18 @@ body {
 
 .file-actions .btn {
     min-width: 140px !important;
-    color: #000 !important;
-    background: #fff !important;
-    border: 1px solid #ccc !important;
+    color: #C9D1D9 !important;
+    background-color: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
     opacity: 1 !important;
     visibility: visible !important;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
 .file-actions .btn:hover {
-    background: #0d6efd !important;
-    color: #fff !important;
+    background-color: #21262D !important;
+    border-color: var(--border-color) !important;
+    color: #FFFFFF !important;
 }
 
 .repo-actions {
@@ -835,14 +837,16 @@ body {
 
 .file-actions .btn {
     min-width: 140px !important;
-    color: #000 !important;
-    background: #fff !important;
-    border: 1px solid #ccc !important;
+    color: #C9D1D9 !important;
+    background-color: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
     opacity: 1 !important;
     visibility: visible !important;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
 .file-actions .btn:hover {
-    background: #0d6efd !important;
-    color: #fff !important;
+    background-color: #21262D !important;
+    border-color: var(--border-color) !important;
+    color: #FFFFFF !important;
 }

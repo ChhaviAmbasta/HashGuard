@@ -136,15 +136,15 @@
                                             <td class="text-center">
                                                 <div class="repo-actions">
                                                     {% if file.user_permission %}
-                                                        <a href="{{ url_for('files.download_file', file_id=file.id) }}" class="btn btn-action btn-action-download btn-sm">Download</a>
+                                                        <a href="{{ url_for('files.download_file', file_id=file.id) }}" class="btn btn-action btn-action-download btn-sm"><i class="fa-solid fa-download me-1"></i>Download</a>
                                                         <form action="{{ url_for('files.verify_file', file_id=file.id) }}" method="POST" class="d-inline">
-                                                            <button type="submit" class="btn btn-action btn-action-verify btn-sm">Verify Integrity</button>
+                                                            <button type="submit" class="btn btn-action btn-action-verify btn-sm"><i class="fa-solid fa-shield-halved me-1"></i>Verify Integrity</button>
                                                         </form>
-                                                        <a href="{{ url_for('files.file_details', file_id=file.id) }}" class="btn btn-action btn-action-details btn-sm">View Details</a>
+                                                        <a href="{{ url_for('files.file_details', file_id=file.id) }}" class="btn btn-action btn-action-details btn-sm"><i class="fa-solid fa-circle-info me-1"></i>View Details</a>
                                                         
                                                         {% if file.user_permission == 'OWNER' %}
                                                             <form action="{{ url_for('files.delete_file', file_id=file.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Soft delete this file?');">
-                                                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                                                <button type="submit" class="btn btn-danger btn-sm"><i class="fa-solid fa-trash me-1"></i>Delete</button>
                                                             </form>
                                                         {% endif %}
                                                     {% else %}
